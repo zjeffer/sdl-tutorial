@@ -20,17 +20,18 @@ bool loadMedia();
 //Frees media and shuts down SDL
 void close();
 
-//Loads individual image
-SDL_Surface* loadSurface(std::string path);
+//Loads individual image as texture
+SDL_Texture* loadTexture(std::string path);
 
 //The window we'll be rendering to
 SDL_Window* gWindow = NULL;
 
-//The surface contained by the window
-SDL_Surface* gScreenSurface = NULL;
+//The window renderer
+SDL_Renderer* gRenderer = NULL;
 
-//Current displayed PNG image
-SDL_Surface* gPNGSurface = NULL;
+//Current displayed texture
+SDL_Texture* gTexture = NULL;
+
 
 bool init() {
     //Initialization flag
@@ -47,15 +48,22 @@ bool init() {
             printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
             success = false;
         } else {
-            //Initialize PNG loading
-            int imgFlags = IMG_INIT_PNG;
-            if (!(IMG_Init(imgFlags) & imgFlags)) {
-                printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-                success = false;
-            } else {
-                //Get window surface
-                gScreenSurface = SDL_GetWindowSurface(gWindow);
-            }
+            // create renderer for windows
+			gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+			if(gRenderer == NULL){
+            	printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
+				success = false;
+			} else {
+				// initialize renderer color
+				SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
+				// initialize png loading
+				int imgFlags = IMG_INIT_PNG;
+				if(!(IMG_Init(imgFlags) & imgFlags)){
+					printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+					success = false;
+				}
+			}
         }
     }
 
@@ -67,9 +75,9 @@ bool loadMedia() {
     bool success = true;
 
     //Load PNG surface
-    gPNGSurface = loadSurface("img/loaded.png");
-    if (gPNGSurface == NULL) {
-        printf("Failed to load PNG image!\n");
+    gTexture = loadTexture("img/texture.png");
+    if (gTexture == NULL) {
+        printf("Failed to load texture image!\n");
         success = false;
     }
 
@@ -78,30 +86,32 @@ bool loadMedia() {
 
 void close() {
     //Free loaded image
-    SDL_FreeSurface(gPNGSurface);
-    gPNGSurface = NULL;
+    SDL_DestroyTexture(gTexture);
+    gTexture = NULL;
 
     //Destroy window
+	SDL_DestroyRenderer(gRenderer);
     SDL_DestroyWindow(gWindow);
-    gWindow = NULL;
+    gRenderer = NULL;
+	gWindow = NULL;
 
     //Quit SDL subsystems
     IMG_Quit();
     SDL_Quit();
 }
 
-SDL_Surface* loadSurface(std::string path) {
-    //The final optimized image
-    SDL_Surface* optimizedSurface = NULL;
+SDL_Texture* loadTexture(std::string path){
+	// the final texture
+	SDL_Texture* newTexture = NULL;
 
-    //Load image at specified path
+	//Load image at specified path
     SDL_Surface* loadedSurface = IMG_Load(path.c_str());
     if (loadedSurface == NULL) {
         printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
     } else {
         //Convert surface to screen format
-        optimizedSurface = SDL_ConvertSurface(loadedSurface, gScreenSurface->format, 0);
-        if (optimizedSurface == NULL) {
+        newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
+        if (newTexture == NULL) {
             printf("Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
         }
 
@@ -109,7 +119,7 @@ SDL_Surface* loadSurface(std::string path) {
         SDL_FreeSurface(loadedSurface);
     }
 
-    return optimizedSurface;
+	return newTexture;
 }
 
 int main(int argc, char* args[]) {
@@ -136,12 +146,14 @@ int main(int argc, char* args[]) {
                         quit = true;
                     }
                 }
+				// cllear screen
+				SDL_RenderClear(gRenderer);
 
-                //Apply the PNG image
-                SDL_BlitSurface(gPNGSurface, NULL, gScreenSurface, NULL);
+				// render texture to screen
+				SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
 
-                //Update the surface
-                SDL_UpdateWindowSurface(gWindow);
+				// update screen
+				SDL_RenderPresent(gRenderer);
             }
         }
     }
