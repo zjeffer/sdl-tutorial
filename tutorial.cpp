@@ -42,12 +42,23 @@ void toggleFullscreen(SDL_Window* window) {
 }
 
 SDL_Surface* loadSurface(std::string path) {
-    // load image at specified path:
+	// the final optimized image:
+	SDL_Surface* optimizedSurface = NULL;
+
+	// load image at specified path:
     SDL_Surface* loadedSurface = SDL_LoadBMP(path.c_str());
     if (loadedSurface == NULL) {
         printf("Unable to load image %s! SDL_Error: %s\n", path.c_str(), SDL_GetError());
-    }
-    return loadedSurface;
+    } else {
+		// convert surface to screen format
+		optimizedSurface = SDL_ConvertSurface(loadedSurface, gScreenSurface->format, 0);
+		if(optimizedSurface == NULL){
+        	printf("Unable to optimize image %s! SDL_Error: %s\n", path.c_str(), SDL_GetError());
+		}
+		// get rid of the loaded surface
+		SDL_FreeSurface(loadedSurface);
+	}
+    return optimizedSurface;
 }
 
 bool init() {
@@ -165,8 +176,14 @@ int main(int argc, char* args[]) {
                                 break;
                         }
                     }
-                    // apply the current image
-                    SDL_BlitSurface(gCurrentSurface, NULL, gScreenSurface, NULL);
+                    // apply the image, stretched and optmized
+					SDL_Rect stretchRect;
+					stretchRect.x = 0;
+					stretchRect.y = 0;
+					stretchRect.w = SCREEN_WIDTH;
+					stretchRect.h = SCREEN_HEIGHT;
+
+                    SDL_BlitScaled(gCurrentSurface, NULL, gScreenSurface, &stretchRect);
                     // update the surface
                     SDL_UpdateWindowSurface(gWindow);
                 }
