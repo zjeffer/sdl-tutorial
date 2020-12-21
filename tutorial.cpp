@@ -85,11 +85,27 @@ int main(int argc, char* args[]) {
         if (!loadMedia()) {
             printf("Failed to load media!\n");
         } else {
-            // apply the loaded surface (gHelloWorld) onto the screen surface
-            SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
-            SDL_UpdateWindowSurface(gWindow);
-            // wait two seconds
-            SDL_Delay(2000);
+            // main loop flag
+            bool quit = false;
+
+            // event handler
+            SDL_Event e;
+
+            // while application is running
+            while (!quit) {
+                while (SDL_PollEvent(&e) != 0) {
+                    //printf("%i\n", SDL_PollEvent(&e));
+                    // user requests quit
+                    if (e.type == SDL_QUIT) {
+                        quit = true;
+                        printf("Event received: %i\n", e.type);
+                    }
+
+                    // apply the loaded surface (gHelloWorld) onto the screen surface
+                    SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+                    SDL_UpdateWindowSurface(gWindow);
+                }
+            }
         }
     }
     // free resources and close sdl
