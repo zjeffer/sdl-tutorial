@@ -1,0 +1,32 @@
+#include <SDL2/SDL_image.h>
+#include <string>
+
+class LTexture {
+    public:
+        // initializes variables
+        LTexture();
+
+        // deallocates memory
+        ~LTexture();
+
+        // loads image at specified path
+        bool loadFromFile(SDL_Renderer* renderer, std::string path);
+
+        // deallocates texture
+        void free();
+
+        // renders texture at given point
+        void render(SDL_Renderer* renderer, int x, int y);
+
+        // gets image dimensions
+        int getWidth();
+        int getHeight();
+
+    private:
+        // the actual hardware texture
+        SDL_Texture* mTexture;
+
+        // image dimensions
+        int mWidth;
+        int mHeight;
+};

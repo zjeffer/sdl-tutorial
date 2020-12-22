@@ -7,6 +7,7 @@ and may not be redistributed without written permission.*/
 #include <stdio.h>
 
 #include <string>
+#include "lTexture.hpp"
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
@@ -31,7 +32,9 @@ SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 
 //Current displayed texture
-SDL_Texture* gTexture = NULL;
+LTexture gFooTexture;
+LTexture gBackgroundTexture;
+
 
 bool init() {
     //Initialization flag
@@ -74,10 +77,15 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
-    //Load texture
-    gTexture = loadTexture("img/viewport.png");
-    if (gTexture == NULL) {
-        printf("Failed to load texture image!\n");
+    //Load foo texture
+    if (!gFooTexture.loadFromFile(gRenderer, "img/foo.png")) {
+        printf("Failed to load Foo texture image!\n");
+        success = false;
+    }
+
+    // load background texture
+    if (!gBackgroundTexture.loadFromFile(gRenderer, "img/background.png")) {
+        printf("Failed to load background texture image!\n");
         success = false;
     }
 
@@ -86,8 +94,8 @@ bool loadMedia() {
 
 void close() {
     //Free loaded image
-    SDL_DestroyTexture(gTexture);
-    gTexture = NULL;
+    gFooTexture.free();
+    gBackgroundTexture.free();
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -98,28 +106,6 @@ void close() {
     //Quit SDL subsystems
     IMG_Quit();
     SDL_Quit();
-}
-
-SDL_Texture* loadTexture(std::string path) {
-    // the final texture
-    SDL_Texture* newTexture = NULL;
-
-    //Load image at specified path
-    SDL_Surface* loadedSurface = IMG_Load(path.c_str());
-    if (loadedSurface == NULL) {
-        printf("Unable to load image %s! SDL_image Error: %s\n", path.c_str(), IMG_GetError());
-    } else {
-        //Convert surface to screen format
-        newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
-        if (newTexture == NULL) {
-            printf("Unable to optimize image %s! SDL Error: %s\n", path.c_str(), SDL_GetError());
-        }
-
-        //Get rid of old loaded surface
-        SDL_FreeSurface(loadedSurface);
-    }
-
-    return newTexture;
 }
 
 int main(int argc, char* args[]) {
@@ -150,38 +136,11 @@ int main(int argc, char* args[]) {
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
 
-                //Top left corner viewport
-                SDL_Rect topLeftViewport;
-                topLeftViewport.x = 0;
-                topLeftViewport.y = 0;
-                topLeftViewport.w = SCREEN_WIDTH / 2;
-                topLeftViewport.h = SCREEN_HEIGHT / 2;
-                SDL_RenderSetViewport(gRenderer, &topLeftViewport);
+                //render background texture to screen
+                gBackgroundTexture.render(gRenderer, 0, 0);
 
-                //Render texture to screen
-                SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-
-                // top right viewport
-                SDL_Rect topRightViewport;
-                topRightViewport.x = SCREEN_WIDTH / 2;
-                topRightViewport.y = 0;
-                topRightViewport.w = SCREEN_WIDTH / 2;
-                topRightViewport.h = SCREEN_HEIGHT / 2;
-                SDL_RenderSetViewport(gRenderer, &topRightViewport);
-
-                // render texture to screen
-                SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
-
-                // bottom viewport
-                SDL_Rect bottomViewport;
-                bottomViewport.x = 0;
-                bottomViewport.y = SCREEN_HEIGHT / 2;
-                bottomViewport.w = SCREEN_WIDTH;
-                bottomViewport.h = SCREEN_HEIGHT / 2;
-                SDL_RenderSetViewport(gRenderer, &bottomViewport);
-
-                // render texture to screen
-                SDL_RenderCopy(gRenderer, gTexture, NULL, NULL);
+                // render foo to the screen
+                gFooTexture.render(gRenderer, 240, 190);
 
                 // update screen
                 SDL_RenderPresent(gRenderer);
