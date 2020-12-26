@@ -31,8 +31,11 @@ SDL_Window* gWindow = NULL;
 //The window renderer
 SDL_Renderer* gRenderer = NULL;
 
-// texture to modulate
+// front texture
 LTexture gModulatedTexture;
+
+// back texture
+LTexture gBackgroundTexture;
 
 bool init() {
     //Initialization flag
@@ -75,11 +78,20 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
-    //Load foo texture
-    if (!gModulatedTexture.loadFromFile(gRenderer, "img/colors.png")) {
-        printf("Failed to load dots texture image!\n");
+    //Load front alpha texture
+    if (!gModulatedTexture.loadFromFile(gRenderer, "img/fadeout.png")) {
+        printf("Failed to load front image!\n");
+        success = false;
+    }else {
+        gModulatedTexture.setBlendMode(SDL_BLENDMODE_BLEND);
+    }
+
+    // load background texture
+    if(!gBackgroundTexture.loadFromFile(gRenderer, "img/fadein.png")){
+        printf("Failed to load back image!\n");
         success = false;
     }
+
 
     return success;
 }
@@ -114,10 +126,7 @@ int main(int argc, char* args[]) {
             //Event handler
             SDL_Event e;
 
-            // modulation components
-            Uint8 r = 255;
-            Uint8 g = 255;
-            Uint8 b = 255;
+            Uint8 a = 255;
 
             //While application is running
             while (!quit) {
@@ -126,46 +135,36 @@ int main(int argc, char* args[]) {
                     //User requests quit
                     if (e.type == SDL_QUIT) {
                         quit = true;
-                    }
-                    // on keypress change rgb values
-                    else if(e.type = SDL_KEYDOWN){
-                        switch(e.key.keysym.sym){
-                            // increase red
-                            case SDLK_q:
-                                r += 32;
-                                break;
-                            // increase green
-                            case SDLK_w:
-                                g += 32;
-                                break;
-                            // increase blue
-                            case SDLK_e:
-                                b += 32;
-                                break;
-                            // decrease red
-                            case SDLK_a:
-                                r -= 32;
-                                break;
-                            // decrease green
-                            case SDLK_s:
-                                g -= 32;
-                                break;
-                            // decrease blue
-                            case SDLK_d:
-                                b -= 32;
-                                break;
+                    } else if(e.type = SDL_KEYDOWN){
+                        //increase alpha with w
+                        if(e.key.keysym.sym == SDLK_w){
+                            // cap if over 255
+                            if(a+32 > 255){
+                                a = 255;
+                            } else {
+                                a += 32;
+                            }
+                        } else if(e.key.keysym.sym = SDLK_s){
+                            // cap if below 0
+                            if(a-32 < 0){
+                                a = 0;
+                            } else {
+                                a -= 32;
+                            }
                         }
-                        
                     }
                 }
                 // clear screen
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
 
-                // modulate and render texture
-                gModulatedTexture.setColor(r,g,b);
+                //render background
+                gBackgroundTexture.render(gRenderer, 0, 0);
+
+                // render front blended
+                gModulatedTexture.setAlpha(a);
                 gModulatedTexture.render(gRenderer, 0, 0);
-                
+
                 // update screen
                 SDL_RenderPresent(gRenderer);
             }
