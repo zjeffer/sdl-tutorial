@@ -14,8 +14,10 @@ class LTexture {
     // loads image at specified path
     bool loadFromFile(SDL_Renderer* renderer, std::string path);
 
+	#ifdef SDL_TTF_MAJOR_VERSION
     // creates image from font string
     bool loadFromRenderedText(SDL_Renderer* renderer, std::string textureText, TTF_Font* font, SDL_Color textColor);
+	#endif
 
     // deallocates texture
     void free();

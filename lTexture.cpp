@@ -1,7 +1,3 @@
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
-
-#include <string>
 #include "./lTexture.hpp"
 
 
@@ -52,6 +48,7 @@ bool LTexture::loadFromFile(SDL_Renderer* renderer, std::string path) {
     return mTexture != NULL;
 }
 
+#if defined(SDL_TTF_MAJOR_VERSION)
 bool LTexture::loadFromRenderedText(SDL_Renderer* renderer, std::string textureText, TTF_Font* font, SDL_Color textColor){
     // get rid of preexisting texture
     free();
@@ -77,6 +74,7 @@ bool LTexture::loadFromRenderedText(SDL_Renderer* renderer, std::string textureT
 
     return mTexture != NULL;
 }
+#endif
 
 // deallocates texture
 void LTexture::free() {

@@ -4,13 +4,14 @@ and may not be redistributed without written permission.*/
 //Using SDL, SDL_image, standard IO, and strings
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 
 #include <string>
 #include <cmath>
 
-#include "lTexture.hpp"
+
+#include "lButton.hpp"
+// #include "lTexture.hpp"
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
@@ -34,11 +35,12 @@ SDL_Window* gWindow = NULL;
 //The window renderer
 SDL_Renderer* gRenderer = NULL;
 
-// text texture
-LTexture gTextTexture;
+// button constants
+const int TOTAL_BUTTONS = 4;
+LButton gButtons[TOTAL_BUTTONS];
 
-// font
-TTF_Font* gFont = NULL;
+SDL_Rect gSpriteClips[ BUTTON_SPRITE_TOTAL ];
+LTexture gButtonSpriteSheetTexture;
 
 bool init() {
     //Initialization flag
@@ -49,6 +51,12 @@ bool init() {
         printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
         success = false;
     } else {
+        //Set texture filtering to linear
+		if( !SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" ) )
+		{
+			printf( "Warning: Linear texture filtering not enabled!" );
+		}
+
         //Create window
         gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
         if (gWindow == NULL) {
@@ -70,12 +78,6 @@ bool init() {
                     printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
                     success = false;
                 }
-
-                // initialize SDL_ttf
-                if(TTF_Init() == -1){
-                    printf("SDL_ttf could not initialize: %s\n", TTF_GetError());
-                    success = false;
-                }
             }
         }
     }
@@ -87,32 +89,31 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
-    //Load font
-    TTF_Font* font = TTF_OpenFont("fonts/lazy.ttf", 28);
-    if (font == NULL){
-        printf("Failed to load font! SDL_ttf error: %s\n", TTF_GetError());
+    if (!gButtonSpriteSheetTexture.loadFromFile(gRenderer, "img/button.png")){
+        printf("Failed to load image! SDL_image error: %s\n", SDL_GetError());
         success = false;
     }else {
-        // render text
-        SDL_Color textColor = {0, 0, 0};
-        if (!gTextTexture.loadFromRenderedText(gRenderer, "The quick brown fox jumps over the lazy dog", font, textColor)){
-            printf("Failed to render text texture!\n");
-            success = false;
+        // set sprites
+        for(int i = 0; i < BUTTON_SPRITE_TOTAL; ++i){
+            gSpriteClips[i].x = 0;
+            gSpriteClips[i].y = i * 200;
+            gSpriteClips[i].w = BUTTON_WIDTH;
+            gSpriteClips[i].h = BUTTON_HEIGHT;
         }
-        
+
+        // set buttons in corners
+        gButtons[0].setPosition(0, 0);
+        gButtons[1].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, 0);
+        gButtons[2].setPosition(0, SCREEN_HEIGHT - BUTTON_HEIGHT);
+        gButtons[3].setPosition(SCREEN_WIDTH - BUTTON_WIDTH, SCREEN_HEIGHT - BUTTON_HEIGHT);
     }
-    
 
     return success;
 }
 
 void close() {
     //Free loaded image
-    gTextTexture.free();
-
-    // free font
-    TTF_CloseFont(gFont);
-    gFont = NULL;
+    gButtonSpriteSheetTexture.free();
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -121,7 +122,6 @@ void close() {
     gWindow = NULL;
 
     //Quit SDL subsystems
-    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
 }
@@ -141,12 +141,6 @@ int main(int argc, char* args[]) {
             //Event handler
             SDL_Event e;
 
-            // angle of rotation
-            double degrees = 0;
-
-            // flip type
-            SDL_RendererFlip flipType = SDL_FLIP_NONE;
-
             //While application is running
             while (!quit) {
                 //Handle events on queue
@@ -154,32 +148,21 @@ int main(int argc, char* args[]) {
                     //User requests quit
                     if (e.type == SDL_QUIT) {
                         quit = true;
-                    } else if (e.type == SDL_KEYDOWN) {
-                        switch (e.key.keysym.sym) {
-                            case SDLK_a:
-                                degrees -= 60;
-                                break;
-                            case SDLK_d:
-                                degrees += 60;
-                                break;
-                            case SDLK_q:
-                                flipType = SDL_FLIP_HORIZONTAL;
-                                break;
-                            case SDLK_w:
-                                flipType = SDL_FLIP_NONE;
-                                break;
-                            case SDLK_e:
-                                flipType = SDL_FLIP_VERTICAL;
-                                break;
-                        }
+                    } 
+
+                    // handle button events
+                    for(int i = 0; i < TOTAL_BUTTONS; ++i){
+                        gButtons[i].handleEvents(&e);
                     }
                 }
                 // clear screen
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
 
-                // render arrow
-                gTextTexture.render(gRenderer, (SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
+                // render buttons
+                for(int i = 0; i < TOTAL_BUTTONS; ++i){
+                    gButtons[i].render(gRenderer, &gButtonSpriteSheetTexture, gSpriteClips);
+                }
 
                 // update screen
                 SDL_RenderPresent(gRenderer);
