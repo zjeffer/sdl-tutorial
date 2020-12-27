@@ -1,41 +1,46 @@
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
+
 #include <string>
 
 class LTexture {
-    public:
-        // initializes variables
-        LTexture();
+   public:
+    // initializes variables
+    LTexture();
 
-        // deallocates memory
-        ~LTexture();
+    // deallocates memory
+    ~LTexture();
 
-        // loads image at specified path
-        bool loadFromFile(SDL_Renderer* renderer, std::string path);
+    // loads image at specified path
+    bool loadFromFile(SDL_Renderer* renderer, std::string path);
 
-        // deallocates texture
-        void free();
+    // creates image from font string
+    bool loadFromRenderedText(SDL_Renderer* renderer, std::string textureText, TTF_Font* font, SDL_Color textColor);
 
-        // set color modulation
-        void setColor(Uint8 red, Uint8 green, Uint8 blue);
+    // deallocates texture
+    void free();
 
-        // set blending
-        void setBlendMode(SDL_BlendMode blending);
+    // set color modulation
+    void setColor(Uint8 red, Uint8 green, Uint8 blue);
 
-        // set alpha modulation
-        void setAlpha(Uint8 alpha);
+    // set blending
+    void setBlendMode(SDL_BlendMode blending);
 
-        // renders texture at given point
-        void render(SDL_Renderer* renderer, int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
+    // set alpha modulation
+    void setAlpha(Uint8 alpha);
 
-        // gets image dimensions
-        int getWidth();
-        int getHeight();
+    // renders texture at given point
+    void render(SDL_Renderer* renderer, int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
 
-    private:
-        // the actual hardware texture
-        SDL_Texture* mTexture;
+    // gets image dimensions
+    int getWidth();
+    int getHeight();
 
-        // image dimensions
-        int mWidth;
-        int mHeight;
+   private:
+    // the actual hardware texture
+    SDL_Texture* mTexture;
+
+    // image dimensions
+    int mWidth;
+    int mHeight;
 };

@@ -4,9 +4,12 @@ and may not be redistributed without written permission.*/
 //Using SDL, SDL_image, standard IO, and strings
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 
 #include <string>
+#include <cmath>
+
 #include "lTexture.hpp"
 
 //Screen dimension constants
@@ -31,8 +34,11 @@ SDL_Window* gWindow = NULL;
 //The window renderer
 SDL_Renderer* gRenderer = NULL;
 
-// walking animation
-LTexture gArrowTexture;
+// text texture
+LTexture gTextTexture;
+
+// font
+TTF_Font* gFont = NULL;
 
 bool init() {
     //Initialization flag
@@ -64,6 +70,12 @@ bool init() {
                     printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
                     success = false;
                 }
+
+                // initialize SDL_ttf
+                if(TTF_Init() == -1){
+                    printf("SDL_ttf could not initialize: %s\n", TTF_GetError());
+                    success = false;
+                }
             }
         }
     }
@@ -75,18 +87,32 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
-    //Load front alpha texture
-    if (!gArrowTexture.loadFromFile(gRenderer, "img/arrow.png")) {
-        printf("Failed to load image!\n");
+    //Load font
+    TTF_Font* font = TTF_OpenFont("fonts/lazy.ttf", 28);
+    if (font == NULL){
+        printf("Failed to load font! SDL_ttf error: %s\n", TTF_GetError());
         success = false;
+    }else {
+        // render text
+        SDL_Color textColor = {0, 0, 0};
+        if (!gTextTexture.loadFromRenderedText(gRenderer, "The quick brown fox jumps over the lazy dog", font, textColor)){
+            printf("Failed to render text texture!\n");
+            success = false;
+        }
+        
     }
+    
 
     return success;
 }
 
 void close() {
     //Free loaded image
-    gArrowTexture.free();
+    gTextTexture.free();
+
+    // free font
+    TTF_CloseFont(gFont);
+    gFont = NULL;
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -95,6 +121,7 @@ void close() {
     gWindow = NULL;
 
     //Quit SDL subsystems
+    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
 }
@@ -127,8 +154,8 @@ int main(int argc, char* args[]) {
                     //User requests quit
                     if (e.type == SDL_QUIT) {
                         quit = true;
-                    } else if(e.type == SDL_KEYDOWN){
-                        switch(e.key.keysym.sym) {
+                    } else if (e.type == SDL_KEYDOWN) {
+                        switch (e.key.keysym.sym) {
                             case SDLK_a:
                                 degrees -= 60;
                                 break;
@@ -152,7 +179,7 @@ int main(int argc, char* args[]) {
                 SDL_RenderClear(gRenderer);
 
                 // render arrow
-                gArrowTexture.render(gRenderer, (SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
+                gTextTexture.render(gRenderer, (SCREEN_WIDTH - gTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTextTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
 
                 // update screen
                 SDL_RenderPresent(gRenderer);
