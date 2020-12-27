@@ -32,9 +32,7 @@ SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 
 // walking animation
-const int ANIMATION_WALKING_FRAMES = 4;
-SDL_Rect gSpriteClips[ANIMATION_WALKING_FRAMES];
-LTexture gSpriteSheetTexture;
+LTexture gArrowTexture;
 
 bool init() {
     //Initialization flag
@@ -78,40 +76,17 @@ bool loadMedia() {
     bool success = true;
 
     //Load front alpha texture
-    if (!gSpriteSheetTexture.loadFromFile(gRenderer, "img/foo.png")) {
-        printf("Failed to load front image!\n");
+    if (!gArrowTexture.loadFromFile(gRenderer, "img/arrow.png")) {
+        printf("Failed to load image!\n");
         success = false;
-    } else {
-        // set sprite clips
-        gSpriteClips[0].x = 0;
-        gSpriteClips[0].y = 0;
-        gSpriteClips[0].w = 64;
-        gSpriteClips[0].h = 205;
-
-        gSpriteClips[1].x = 64;
-        gSpriteClips[1].y = 0;
-        gSpriteClips[1].w = 64;
-        gSpriteClips[1].h = 205;
-
-        gSpriteClips[2].x = 128;
-        gSpriteClips[2].y = 0;
-        gSpriteClips[2].w = 64;
-        gSpriteClips[2].h = 205;
-
-        gSpriteClips[3].x = 196;
-        gSpriteClips[3].y = 0;
-        gSpriteClips[3].w = 64;
-        gSpriteClips[3].h = 205;
-
     }
-
 
     return success;
 }
 
 void close() {
     //Free loaded image
-    gSpriteSheetTexture.free();
+    gArrowTexture.free();
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -139,7 +114,11 @@ int main(int argc, char* args[]) {
             //Event handler
             SDL_Event e;
 
-            int frame = 0;
+            // angle of rotation
+            double degrees = 0;
+
+            // flip type
+            SDL_RendererFlip flipType = SDL_FLIP_NONE;
 
             //While application is running
             while (!quit) {
@@ -148,23 +127,32 @@ int main(int argc, char* args[]) {
                     //User requests quit
                     if (e.type == SDL_QUIT) {
                         quit = true;
+                    } else if(e.type == SDL_KEYDOWN){
+                        switch(e.key.keysym.sym) {
+                            case SDLK_a:
+                                degrees -= 60;
+                                break;
+                            case SDLK_d:
+                                degrees += 60;
+                                break;
+                            case SDLK_q:
+                                flipType = SDL_FLIP_HORIZONTAL;
+                                break;
+                            case SDLK_w:
+                                flipType = SDL_FLIP_NONE;
+                                break;
+                            case SDLK_e:
+                                flipType = SDL_FLIP_VERTICAL;
+                                break;
+                        }
                     }
                 }
                 // clear screen
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
 
-                // render current frame
-                SDL_Rect* currentClip = &gSpriteClips[frame/4];
-                gSpriteSheetTexture.render(gRenderer, (SCREEN_WIDTH - currentClip->w)/2, (SCREEN_HEIGHT - currentClip->h)/2, currentClip);
-
-                // go to next frame
-                ++frame;
-
-                // cycle animation
-                if (frame / 4 >= ANIMATION_WALKING_FRAMES){
-                    frame = 0;
-                }
+                // render arrow
+                gArrowTexture.render(gRenderer, (SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, degrees, NULL, flipType);
 
                 // update screen
                 SDL_RenderPresent(gRenderer);

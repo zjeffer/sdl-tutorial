@@ -77,7 +77,7 @@ void LTexture::setAlpha(Uint8 alpha){
 }
 
 // renders texture at given point
-void LTexture::render(SDL_Renderer* renderer, int x, int y, SDL_Rect* clip) {
+void LTexture::render(SDL_Renderer* renderer, int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip){
     // set rendering space and render to screen
     SDL_Rect renderQuad = {x, y, mWidth, mHeight};
 
@@ -87,7 +87,7 @@ void LTexture::render(SDL_Renderer* renderer, int x, int y, SDL_Rect* clip) {
         renderQuad.h = clip->h;
     }
 
-    SDL_RenderCopy(renderer, mTexture, clip, &renderQuad);
+    SDL_RenderCopyEx(renderer, mTexture, clip, &renderQuad, angle, center, flip);
 }
 
 // gets image dimensions
