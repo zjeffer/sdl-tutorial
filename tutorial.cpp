@@ -39,6 +39,8 @@ const int JOYSTICK_DEAD_ZONE = 8000;
 
 // game controller 1 handler
 SDL_Joystick* gGameController = NULL;
+// haptic feedback for controller
+SDL_Haptic* gControllerHaptic = NULL;
 
 LTexture gArrowTexture;
 
@@ -75,6 +77,17 @@ bool init() {
                 printf("Number of buttons: %i\n", SDL_JoystickNumButtons(gGameController));
                 printf("Number of balls: %i\n", SDL_JoystickNumBalls(gGameController));
                 printf("=====================\n");
+
+                // get controller haptic device
+                gControllerHaptic = SDL_HapticOpenFromJoystick(gGameController);
+                if(gControllerHaptic == NULL){
+                    printf("Warning: controller does not support haptics! SDl_Error: %s\n", SDL_GetError());
+                } else {
+                    // get initialize rumble
+                    if(SDL_HapticRumbleInit(gControllerHaptic) < 0){
+                        printf("Warning: Unable to init rumble! SDL_Error: %s\n", SDL_GetError());
+                    }
+                }
             }
         }
 
@@ -125,7 +138,9 @@ void close() {
 
     // close game controller
     SDL_JoystickClose(gGameController);
+    SDL_HapticClose(gControllerHaptic);
     gGameController = NULL;
+    gControllerHaptic = NULL;
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -195,6 +210,11 @@ int main(int argc, char* args[]) {
                                 }
                             }
                             
+                        }
+                    } else if(e.type == SDL_JOYBUTTONDOWN) {
+                        // play rumble at 75% strength for 500 millis
+                        if(SDL_HapticRumblePlay(gControllerHaptic, 0.75, 500) != 0){
+                            printf("Warning: Unable to play rumble! Error: %s\n", SDL_GetError());
                         }
                     }
                 }
