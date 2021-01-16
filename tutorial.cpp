@@ -4,6 +4,7 @@ and may not be redistributed without written permission.*/
 //Using SDL, SDL_image, standard IO, and strings
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
 #include <stdio.h>
 
 #include <string>
@@ -34,15 +35,17 @@ SDL_Window* gWindow = NULL;
 //The window renderer
 SDL_Renderer* gRenderer = NULL;
 
-// analog joystick dead zone
-const int JOYSTICK_DEAD_ZONE = 8000;
+//Scene texture
+LTexture gPromptTexture;
 
-// game controller 1 handler
-SDL_Joystick* gGameController = NULL;
-// haptic feedback for controller
-SDL_Haptic* gControllerHaptic = NULL;
+// The music that will be played
+Mix_Music* gMusic = NULL;
 
-LTexture gArrowTexture;
+// The sound effects that will be used
+Mix_Chunk* gScratch = NULL;
+Mix_Chunk* gHigh= NULL;
+Mix_Chunk* gMedium = NULL;
+Mix_Chunk* gLow = NULL;
 
 
 bool init() {
@@ -50,7 +53,7 @@ bool init() {
     bool success = true;
 
     //Initialize SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         printf("SDL could not initialize! SDL Error: %s\n", SDL_GetError());
         success = false;
     } else {
@@ -59,37 +62,6 @@ bool init() {
 		{
 			printf( "Warning: Linear texture filtering not enabled!\n" );
 		}
-
-        // check for joysticks
-        int numJoysticks = SDL_NumJoysticks();
-        if (numJoysticks < 1){
-            printf("Warning: No joysticks connected!\n");
-        } else {
-            printf("INFO: Number of joysticks found: %i\n", numJoysticks);
-            // load joystick
-            gGameController = SDL_JoystickOpen(0);
-            if(gGameController == NULL){
-                printf("Warning: Unable to open game controller! SDL_Error: %s\n", SDL_GetError());
-            } else {
-                printf("=====================\n");
-                printf("Joystick name: %s\n", SDL_JoystickName(gGameController));
-                printf("Number of axes: %i\n", SDL_JoystickNumAxes(gGameController));
-                printf("Number of buttons: %i\n", SDL_JoystickNumButtons(gGameController));
-                printf("Number of balls: %i\n", SDL_JoystickNumBalls(gGameController));
-                printf("=====================\n");
-
-                // get controller haptic device
-                gControllerHaptic = SDL_HapticOpenFromJoystick(gGameController);
-                if(gControllerHaptic == NULL){
-                    printf("Warning: controller does not support haptics! SDl_Error: %s\n", SDL_GetError());
-                } else {
-                    // get initialize rumble
-                    if(SDL_HapticRumbleInit(gControllerHaptic) < 0){
-                        printf("Warning: Unable to init rumble! SDL_Error: %s\n", SDL_GetError());
-                    }
-                }
-            }
-        }
 
         //Create window
         gWindow = SDL_CreateWindow("SDL Tutorial", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
@@ -112,6 +84,12 @@ bool init() {
                     printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
                     success = false;
                 }
+
+                // initialize SDL_mixer
+                if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0){
+                    printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+                    success = false;
+                }
             }
         }
     }
@@ -123,24 +101,64 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
-    if (!gArrowTexture.loadFromFile(gRenderer, "img/arrow.png")){
-        printf("Failed to load arrow image! SDL_image error: %s\n", SDL_GetError());
+    // load prompt texture
+    if(!gPromptTexture.loadFromFile(gRenderer, "img/prompt.png")){
+        printf("Failed to load prompt texture! \n");
         success = false;
     }
-    
+
+    // load music
+    gMusic = Mix_LoadMUS("sound/beat.wav");
+    if(gMusic == NULL){
+        printf("Failed to load beat music! SDL_mixer Error: %s\n", Mix_GetError());
+        success = false;
+    }
+
+    // load sounds
+    gScratch = Mix_LoadWAV("sound/scratch.wav");
+    if(gScratch == NULL){
+        printf("Failed to load scratch! SDL_mixer Error: %s\n", Mix_GetError());
+        success = false;
+    }
+
+    gHigh = Mix_LoadWAV("sound/high.wav");
+    if(gHigh == NULL){
+        printf("Failed to load high.wav! SDL_mixer Error: %s\n", Mix_GetError());
+        success = false;
+    }
+
+    gMedium = Mix_LoadWAV("sound/medium.wav");
+    if(gMedium == NULL){
+        printf("Failed to load medium.wav! SDL_mixer Error: %s\n", Mix_GetError());
+        success = false;
+    }
+
+    gLow = Mix_LoadWAV("sound/low.wav");
+    if(gLow == NULL){
+        printf("Failed to load low.wav! SDL_mixer Error: %s\n", Mix_GetError());
+        success = false;
+    }
 
     return success;
 }
 
 void close() {
     //Free loaded image
-    gArrowTexture.free();
+    gPromptTexture.free();
 
-    // close game controller
-    SDL_JoystickClose(gGameController);
-    SDL_HapticClose(gControllerHaptic);
-    gGameController = NULL;
-    gControllerHaptic = NULL;
+    // free sound effects
+    Mix_FreeChunk(gScratch);
+    Mix_FreeChunk(gHigh);
+    Mix_FreeChunk(gMedium);
+    Mix_FreeChunk(gLow);
+    gScratch = NULL;
+    gHigh = NULL;
+    gMedium = NULL;
+    gLow = NULL;
+
+    // free music
+    Mix_FreeMusic(gMusic);
+    gMusic = NULL;
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -149,6 +167,7 @@ void close() {
     gWindow = NULL;
 
     //Quit SDL subsystems
+    Mix_Quit();
     IMG_Quit();
     SDL_Quit();
 }
@@ -168,11 +187,6 @@ int main(int argc, char* args[]) {
             //Event handler
             SDL_Event e;
 
-            double angle = 0.0;
-            // normalized direction
-            int xDir = 0;
-            int yDir = 0;
-
             //While application is running
             while (!quit) {
                 //Handle events on queue
@@ -180,41 +194,46 @@ int main(int argc, char* args[]) {
                     //User requests quit
                     if (e.type == SDL_QUIT) {
                         quit = true;
-                    } else if (e.type == SDL_JOYAXISMOTION){
-                        // motion on controller 0
-                        if(e.jaxis.which == 0){
-                            // x axis
-                            if(e.jaxis.axis == 0){
-                                // left of dead zone
-                                if(e.jaxis.value < -JOYSTICK_DEAD_ZONE){
-                                    xDir = -1;
-                                }
-                                // right of dead zone
-                                else if(e.jaxis.value > JOYSTICK_DEAD_ZONE){
-                                    xDir = 1;
-                                }else{
-                                    xDir = 0;
+                    } else if (e.type == SDL_KEYDOWN){
+                        switch (e.key.keysym.sym)
+                        {
+                        case SDLK_1:
+                            // play high sound effect
+                            Mix_PlayChannel(-1, gHigh, 0);
+                            break;
+                        case SDLK_2:
+                            // play medium sound effect
+                            Mix_PlayChannel(-1, gMedium, 0);
+                            break;
+                        case SDLK_3:
+                            // play low sound effect
+                            Mix_PlayChannel(-1, gLow, 0);
+                            break;
+                        case SDLK_4:
+                            // play scratch sound effect
+                            Mix_PlayChannel(-1, gScratch, 0);
+                            break;
+                        case SDLK_9:
+                            // if there is no music playing
+                            if(Mix_PlayingMusic() == 0){
+                                // play the music
+                                Mix_PlayMusic(gMusic, -1);
+                            }
+                            else {
+                                // if the music is paused
+                                if(Mix_PausedMusic() == 1){
+                                    Mix_ResumeMusic();
+                                } else {
+                                    Mix_PauseMusic();
                                 }
                             }
-                            // y axis
-                            else if (e.jaxis.axis == 1){
-                                // left of dead zone
-                                if(e.jaxis.value < -JOYSTICK_DEAD_ZONE){
-                                    yDir = -1;
-                                }
-                                // right of dead zone
-                                else if(e.jaxis.value > JOYSTICK_DEAD_ZONE){
-                                    yDir = 1;
-                                }else{
-                                    yDir = 0;
-                                }
-                            }
-                            
-                        }
-                    } else if(e.type == SDL_JOYBUTTONDOWN) {
-                        // play rumble at 75% strength for 500 millis
-                        if(SDL_HapticRumblePlay(gControllerHaptic, 0.75, 500) != 0){
-                            printf("Warning: Unable to play rumble! Error: %s\n", SDL_GetError());
+                            break;
+                        case SDLK_0:
+                            // stop the music
+                            Mix_HaltMusic();
+                            break;
+                        default:
+                            break;
                         }
                     }
                 }
@@ -222,14 +241,7 @@ int main(int argc, char* args[]) {
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
 
-                // calculate angle
-                double joystickAngle = atan2((double) yDir, (double) xDir) * (180.0 / M_PI);
-                if(xDir == 0 && yDir == 0){
-                    joystickAngle = 0;
-                }
-
-                // render joystick 8 way angle
-                gArrowTexture.render(gRenderer, (SCREEN_WIDTH - gArrowTexture.getWidth()) / 2, (SCREEN_HEIGHT - gArrowTexture.getHeight()) / 2, NULL, joystickAngle);
+                gPromptTexture.render(gRenderer, 0, 0);
 
                 // update screen
                 SDL_RenderPresent(gRenderer);
