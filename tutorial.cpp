@@ -11,6 +11,7 @@ and may not be redistributed without written permission.*/
 #include <string>
 
 #include "lTexture.hpp"
+#include "lTimer.hpp"
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
@@ -34,8 +35,9 @@ SDL_Window* gWindow = NULL;
 //The window renderer
 SDL_Renderer* gRenderer = NULL;
 
-//Scene texture
-LTexture gPromptTexture;
+//Scene textures
+LTexture gStartPromptTexture;
+LTexture gPausePromptTexture;
 
 // time text texture
 LTexture gTimeTextTexture;
@@ -108,12 +110,20 @@ bool loadMedia() {
     } else {
         // set text color to black
         SDL_Color textColor = {0, 0, 0, 255};
-        // load prompt texture
-        if (!gPromptTexture.loadFromRenderedText(gRenderer, "Press Enter to reset start time\n", gFont, textColor)) {
-            printf("Unable to render prompt texture! \n");
-            success = false;
-        } else {
-        }
+		
+		//Load stop prompt texture
+		if( !gStartPromptTexture.loadFromRenderedText(gRenderer, "Press S to Start or Stop the Timer", gFont, textColor ) )
+		{
+			printf( "Unable to render start/stop prompt texture!\n" );
+			success = false;
+		}
+		
+		//Load pause prompt texture
+		if( !gPausePromptTexture.loadFromRenderedText(gRenderer, "Press P to Pause or Unpause the Timer", gFont, textColor ) )
+		{
+			printf( "Unable to render pause/unpause prompt texture!\n" );
+			success = false;
+		}
     }
     
     return success;
@@ -121,7 +131,8 @@ bool loadMedia() {
 
 void close() {
     //Free loaded images
-    gPromptTexture.free();
+    gPausePromptTexture.free();
+    gStartPromptTexture.free();
     gTimeTextTexture.free();
 
     // close font
@@ -158,13 +169,13 @@ int main(int argc, char* args[]) {
             // set text color
             SDL_Color textColor = {0,0,0,255};
 
-            // current time
-            Uint32 startTime = 0;
+			// the application timer
+			LTimer timer;
 
             // in memory text stream
             std::stringstream timeText;
 
-            //While application is running
+            //While application is running (main loop)
             while (!quit) {
                 //Handle events on queue
                 while (SDL_PollEvent(&e) != 0) {
@@ -173,9 +184,20 @@ int main(int argc, char* args[]) {
                         quit = true;
                     } else if (e.type == SDL_KEYDOWN) {
                         switch (e.key.keysym.sym) {
-                            case SDLK_RETURN: 
-                                startTime = SDL_GetTicks();
+                            case SDLK_s: 
+								if(timer.isStarted()){
+									timer.stop();
+								} else {
+									timer.start();
+								}
                                 break;
+							case SDLK_p:
+								if(timer.isPaused()){
+									timer.unpause();
+								} else {
+									timer.pause();
+								}
+								break;
                             default:
                                 break;
                         }
@@ -183,7 +205,7 @@ int main(int argc, char* args[]) {
                 }
                 // set text to be rendered
                 timeText.str("");
-                timeText << "Milliseconds since start time " << SDL_GetTicks() - startTime;
+                timeText << "Seconds since start time " << (timer.getTicks() / 1000.f);
 
                 // render text
                 if(!gTimeTextTexture.loadFromRenderedText(gRenderer, timeText.str().c_str(), gFont, textColor)){
@@ -194,8 +216,9 @@ int main(int argc, char* args[]) {
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
 
-                gPromptTexture.render(gRenderer, (SCREEN_WIDTH - gPromptTexture.getWidth()) / 2, 0);
-                gTimeTextTexture.render(gRenderer, (SCREEN_WIDTH - gPromptTexture.getWidth()) / 2, (SCREEN_HEIGHT - gPromptTexture.getHeight())/2);
+				gStartPromptTexture.render(gRenderer, (SCREEN_WIDTH - gStartPromptTexture.getWidth()) / 2, 0);
+                gPausePromptTexture.render(gRenderer, (SCREEN_WIDTH - gPausePromptTexture.getWidth()) / 2, gStartPromptTexture.getHeight());
+                gTimeTextTexture.render(gRenderer, (SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight())/2);
 
                 // update screen
                 SDL_RenderPresent(gRenderer);
