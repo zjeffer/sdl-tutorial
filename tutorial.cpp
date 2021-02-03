@@ -35,12 +35,8 @@ SDL_Window* gWindow = NULL;
 //The window renderer
 SDL_Renderer* gRenderer = NULL;
 
-//Scene textures
-LTexture gStartPromptTexture;
-LTexture gPausePromptTexture;
-
 // time text texture
-LTexture gTimeTextTexture;
+LTexture gFPSTextTexture;
 
 TTF_Font* gFont = NULL;
 
@@ -98,9 +94,6 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
-    printf("start \n");
-
-
     // open the font
     gFont = TTF_OpenFont("fonts/lazy.ttf", 28);
     
@@ -108,20 +101,13 @@ bool loadMedia() {
         printf("Failed to load font! SDL_ttf Error: %s\n", TTF_GetError());
         success = false;
     } else {
-        // set text color to black
+        //set text color to black
         SDL_Color textColor = {0, 0, 0, 255};
 		
 		//Load stop prompt texture
-		if( !gStartPromptTexture.loadFromRenderedText(gRenderer, "Press S to Start or Stop the Timer", gFont, textColor ) )
+		if( !gFPSTextTexture.loadFromRenderedText(gRenderer, "Press S to Start or Stop the Timer", gFont, textColor ) )
 		{
 			printf( "Unable to render start/stop prompt texture!\n" );
-			success = false;
-		}
-		
-		//Load pause prompt texture
-		if( !gPausePromptTexture.loadFromRenderedText(gRenderer, "Press P to Pause or Unpause the Timer", gFont, textColor ) )
-		{
-			printf( "Unable to render pause/unpause prompt texture!\n" );
 			success = false;
 		}
     }
@@ -131,9 +117,7 @@ bool loadMedia() {
 
 void close() {
     //Free loaded images
-    gPausePromptTexture.free();
-    gStartPromptTexture.free();
-    gTimeTextTexture.free();
+    gFPSTextTexture.free();
 
     // close font
     TTF_CloseFont(gFont);
@@ -170,10 +154,14 @@ int main(int argc, char* args[]) {
             SDL_Color textColor = {0,0,0,255};
 
 			// the application timer
-			LTimer timer;
+			LTimer fpsTimer;
 
             // in memory text stream
             std::stringstream timeText;
+
+            // start counting fps
+            int countedFrames = 0;
+            fpsTimer.start();
 
             //While application is running (main loop)
             while (!quit) {
@@ -182,33 +170,21 @@ int main(int argc, char* args[]) {
                     //User requests quit
                     if (e.type == SDL_QUIT) {
                         quit = true;
-                    } else if (e.type == SDL_KEYDOWN) {
-                        switch (e.key.keysym.sym) {
-                            case SDLK_s: 
-								if(timer.isStarted()){
-									timer.stop();
-								} else {
-									timer.start();
-								}
-                                break;
-							case SDLK_p:
-								if(timer.isPaused()){
-									timer.unpause();
-								} else {
-									timer.pause();
-								}
-								break;
-                            default:
-                                break;
-                        }
                     }
                 }
+                // calculate and correct fps
+                float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
+                // if the above number is very high (can happen when amount of time passed for the first frame is very small)
+                if (avgFPS > 2000000){
+                    avgFPS = 0;
+                }
+
                 // set text to be rendered
                 timeText.str("");
-                timeText << "Seconds since start time " << (timer.getTicks() / 1000.f);
+                timeText << "Average frames per second: " << avgFPS;
 
                 // render text
-                if(!gTimeTextTexture.loadFromRenderedText(gRenderer, timeText.str().c_str(), gFont, textColor)){
+                if(!gFPSTextTexture.loadFromRenderedText(gRenderer, timeText.str().c_str(), gFont, textColor)){
                     printf( "Unable to render time texture!\n" );
                 }
 
@@ -216,12 +192,11 @@ int main(int argc, char* args[]) {
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
 
-				gStartPromptTexture.render(gRenderer, (SCREEN_WIDTH - gStartPromptTexture.getWidth()) / 2, 0);
-                gPausePromptTexture.render(gRenderer, (SCREEN_WIDTH - gPausePromptTexture.getWidth()) / 2, gStartPromptTexture.getHeight());
-                gTimeTextTexture.render(gRenderer, (SCREEN_WIDTH - gTimeTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gTimeTextTexture.getHeight())/2);
+                gFPSTextTexture.render(gRenderer, (SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight())/2);
 
                 // update screen
                 SDL_RenderPresent(gRenderer);
+                ++countedFrames;
             }
         }
     }
