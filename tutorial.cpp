@@ -10,14 +10,10 @@ and may not be redistributed without written permission.*/
 #include <sstream>
 #include <string>
 
+#include "Constants.hpp"
 #include "lTexture.hpp"
 #include "lTimer.hpp"
-
-//Screen dimension constants
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-const int SCREEN_FPS = 60;
-const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
+#include "Dot.hpp"
 
 //Starts up SDL and creates window
 bool init();
@@ -37,10 +33,8 @@ SDL_Window* gWindow = NULL;
 //The window renderer
 SDL_Renderer* gRenderer = NULL;
 
-// time text texture
-LTexture gFPSTextTexture;
-
-TTF_Font* gFont = NULL;
+// dot texture
+LTexture gDotTexture;
 
 
 bool init() {
@@ -64,7 +58,7 @@ bool init() {
             success = false;
         } else {
             // create renderer for windows
-            gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
+            gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED || SDL_HINT_RENDER_VSYNC);
             if (gRenderer == NULL) {
                 printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
                 success = false;
@@ -96,22 +90,9 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
-    // open the font
-    gFont = TTF_OpenFont("fonts/lazy.ttf", 28);
-    
-    if (gFont == NULL){
-        printf("Failed to load font! SDL_ttf Error: %s\n", TTF_GetError());
-        success = false;
-    } else {
-        //set text color to black
-        SDL_Color textColor = {0, 0, 0, 255};
-		
-		//Load stop prompt texture
-		if( !gFPSTextTexture.loadFromRenderedText(gRenderer, "Press S to Start or Stop the Timer", gFont, textColor ) )
-		{
-			printf( "Unable to render start/stop prompt texture!\n" );
-			success = false;
-		}
+    if(!gDotTexture.loadFromFile(gRenderer, "img/dot.bmp")){
+        printf( "Failed to load dot texture!\n" );
+		success = false;
     }
     
     return success;
@@ -119,11 +100,7 @@ bool loadMedia() {
 
 void close() {
     //Free loaded images
-    gFPSTextTexture.free();
-
-    // close font
-    TTF_CloseFont(gFont);
-	gFont = NULL;
+    gDotTexture.free();
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -152,66 +129,37 @@ int main(int argc, char* args[]) {
             //Event handler
             SDL_Event e;
 
+            // the dot that will be moving around the screen
+            Dot dot;
+
             // set text color
             SDL_Color textColor = {0,0,0,255};
 
-            // the fps cap timer
-            LTimer capTimer;
-
-			// the fps timer
-			LTimer fpsTimer;
-
-            // in memory text stream
-            std::stringstream timeText;
-
-            // start counting fps
-            int countedFrames = 0;
-            fpsTimer.start();
-
             //While application is running (main loop)
             while (!quit) {
-                // start cap timer
-                capTimer.start();
-
                 //Handle events on queue
                 while (SDL_PollEvent(&e) != 0) {
                     //User requests quit
                     if (e.type == SDL_QUIT) {
                         quit = true;
                     }
-                }
-                // calculate and correct fps
-                float avgFPS = countedFrames / (fpsTimer.getTicks() / 1000.f);
-                // if the above number is very high (can happen when amount of time passed for the first frame is very small)
-                if (avgFPS > 2000000){
-                    avgFPS = 0;
+
+                    // handle input for the dot
+                    dot.handleEvent(e);
                 }
 
-                // set text to be rendered
-                timeText.str("");
-                timeText << "Average frames per second: " << avgFPS;
-
-                // render text
-                if(!gFPSTextTexture.loadFromRenderedText(gRenderer, timeText.str().c_str(), gFont, textColor)){
-                    printf( "Unable to render time texture!\n" );
-                }
+                dot.move();
 
                 // clear screen
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
 
-                gFPSTextTexture.render(gRenderer, (SCREEN_WIDTH - gFPSTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gFPSTextTexture.getHeight())/2);
+                // render object
+                dot.render(gRenderer, &gDotTexture);
 
                 // update screen
                 SDL_RenderPresent(gRenderer);
-                ++countedFrames;
-
-                // if frame finished early
-                int frameTicks = capTimer.getTicks();
-                if(frameTicks < SCREEN_TICKS_PER_FRAME){
-                    // wait remaining time
-                    SDL_Delay(SCREEN_TICKS_PER_FRAME - frameTicks);
-                }
+                
             }
         }
     }
