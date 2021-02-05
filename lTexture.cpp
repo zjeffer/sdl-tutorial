@@ -1,7 +1,5 @@
 #include "./lTexture.hpp"
 
-
-
 LTexture::LTexture() {
     // initialize
     mTexture = NULL;
@@ -49,18 +47,18 @@ bool LTexture::loadFromFile(SDL_Renderer* renderer, std::string path) {
 }
 
 #if defined(SDL_TTF_MAJOR_VERSION)
-bool LTexture::loadFromRenderedText(SDL_Renderer* renderer, std::string textureText, TTF_Font* font, SDL_Color textColor){
+bool LTexture::loadFromRenderedText(SDL_Renderer* renderer, std::string textureText, TTF_Font* font, SDL_Color textColor) {
     // get rid of preexisting texture
     free();
 
     // render text surface
     SDL_Surface* textSurface = TTF_RenderText_Solid(font, textureText.c_str(), textColor);
-    if(textSurface == NULL){
+    if (textSurface == NULL) {
         printf("Unable to render text surface! SDL_ttf error: %s\n", TTF_GetError());
     } else {
         // create texture from surface pixels
         mTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-        if(mTexture == NULL){
+        if (mTexture == NULL) {
             printf("Unable to create texture from rendered text! SDL error: %s\n", SDL_GetError());
         } else {
             // get image dimensions
@@ -87,28 +85,28 @@ void LTexture::free() {
     }
 }
 
-void LTexture::setColor(Uint8 red, Uint8 green, Uint8 blue){
+void LTexture::setColor(Uint8 red, Uint8 green, Uint8 blue) {
     // modulate texture
     SDL_SetTextureColorMod(mTexture, red, green, blue);
 }
 
-void LTexture::setBlendMode(SDL_BlendMode blending){
+void LTexture::setBlendMode(SDL_BlendMode blending) {
     // set blending function
     SDL_SetTextureBlendMode(mTexture, blending);
 }
 
-void LTexture::setAlpha(Uint8 alpha){
+void LTexture::setAlpha(Uint8 alpha) {
     // modulate texture alpha
     SDL_SetTextureAlphaMod(mTexture, alpha);
 }
 
 // renders texture at given point
-void LTexture::render(SDL_Renderer* renderer, int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip){
+void LTexture::render(SDL_Renderer* renderer, int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip) {
     // set rendering space and render to screen
     SDL_Rect renderQuad = {x, y, mWidth, mHeight};
 
     // set clip rendering dimensions
-    if(clip != NULL){
+    if (clip != NULL) {
         renderQuad.w = clip->w;
         renderQuad.h = clip->h;
     }
@@ -123,7 +121,6 @@ int LTexture::getWidth() {
 int LTexture::getHeight() {
     return mHeight;
 }
-
 
 // the actual hardware texture
 SDL_Texture* mTexture;

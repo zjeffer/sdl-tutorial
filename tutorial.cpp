@@ -11,9 +11,9 @@ and may not be redistributed without written permission.*/
 #include <string>
 
 #include "Constants.hpp"
+#include "Dot.hpp"
 #include "lTexture.hpp"
 #include "lTimer.hpp"
-#include "Dot.hpp"
 
 //Starts up SDL and creates window
 bool init();
@@ -35,7 +35,6 @@ SDL_Renderer* gRenderer = NULL;
 
 // dot texture
 LTexture gDotTexture;
-
 
 bool init() {
     //Initialization flag
@@ -72,13 +71,12 @@ bool init() {
                     printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
                     success = false;
                 }
-                
+
                 //Initialize SDL_ttf
-				if( TTF_Init() == -1 )
-				{
-					printf( "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError() );
-					success = false;
-				}
+                if (TTF_Init() == -1) {
+                    printf("SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
+                    success = false;
+                }
             }
         }
     }
@@ -90,11 +88,11 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
-    if(!gDotTexture.loadFromFile(gRenderer, "img/dot.bmp")){
-        printf( "Failed to load dot texture!\n" );
-		success = false;
+    if (!gDotTexture.loadFromFile(gRenderer, "img/dot.bmp")) {
+        printf("Failed to load dot texture!\n");
+        success = false;
     }
-    
+
     return success;
 }
 
@@ -133,7 +131,7 @@ int main(int argc, char* args[]) {
             Dot dot;
 
             // set text color
-            SDL_Color textColor = {0,0,0,255};
+            SDL_Color textColor = {0, 0, 0, 255};
 
             //While application is running (main loop)
             while (!quit) {
@@ -159,7 +157,6 @@ int main(int argc, char* args[]) {
 
                 // update screen
                 SDL_RenderPresent(gRenderer);
-                
             }
         }
     }
