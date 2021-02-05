@@ -16,6 +16,8 @@ and may not be redistributed without written permission.*/
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
+const int SCREEN_FPS = 60;
+const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 
 //Starts up SDL and creates window
 bool init();
@@ -62,7 +64,7 @@ bool init() {
             success = false;
         } else {
             // create renderer for windows
-            gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+            gRenderer = SDL_CreateRenderer(gWindow, -1, SDL_RENDERER_ACCELERATED);
             if (gRenderer == NULL) {
                 printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
                 success = false;
@@ -153,7 +155,10 @@ int main(int argc, char* args[]) {
             // set text color
             SDL_Color textColor = {0,0,0,255};
 
-			// the application timer
+            // the fps cap timer
+            LTimer capTimer;
+
+			// the fps timer
 			LTimer fpsTimer;
 
             // in memory text stream
@@ -165,6 +170,9 @@ int main(int argc, char* args[]) {
 
             //While application is running (main loop)
             while (!quit) {
+                // start cap timer
+                capTimer.start();
+
                 //Handle events on queue
                 while (SDL_PollEvent(&e) != 0) {
                     //User requests quit
@@ -197,6 +205,13 @@ int main(int argc, char* args[]) {
                 // update screen
                 SDL_RenderPresent(gRenderer);
                 ++countedFrames;
+
+                // if frame finished early
+                int frameTicks = capTimer.getTicks();
+                if(frameTicks < SCREEN_TICKS_PER_FRAME){
+                    // wait remaining time
+                    SDL_Delay(SCREEN_TICKS_PER_FRAME - frameTicks);
+                }
             }
         }
     }
