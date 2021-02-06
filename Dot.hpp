@@ -20,7 +20,7 @@ class Dot {
     void handleEvent(SDL_Event& e);
 
     // moves the dot
-    void move();
+    void move(SDL_Rect& wall);
 
     // shows the dot on the screen
     void render(SDL_Renderer* renderer, LTexture* texture);
@@ -31,4 +31,7 @@ class Dot {
 
     // the velocity of the dot
     int mVelX, mVelY;
+
+    // dot's collision detector
+    SDL_Rect mCollider;
 };
