@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <vector>
 
 #include "Constants.hpp"
 #include "lTexture.hpp"
@@ -11,19 +12,21 @@ class Dot {
     static const int DOT_HEIGHT = 20;
 
     // maximum axis velocity of the dot
-    static const int DOT_VEL = 10;
+    static const int DOT_VEL = 1;
 
     // initialize the variables
-    Dot();
+    Dot(int x, int y);
 
     // takes key presses and adjusts the dot's velocity
     void handleEvent(SDL_Event& e);
 
     // moves the dot
-    void move(SDL_Rect& wall);
+    void move(std::vector<SDL_Rect>& otherColliders);
 
     // shows the dot on the screen
     void render(SDL_Renderer* renderer, LTexture* texture);
+
+    std::vector<SDL_Rect>& getColliders();
 
    private:
     // the x and y offsets of the dot
@@ -33,5 +36,8 @@ class Dot {
     int mVelX, mVelY;
 
     // dot's collision detector
-    SDL_Rect mCollider;
+    std::vector<SDL_Rect> mColliders;
+
+    // moves the collision boxes relateive to the dot's offset
+    void shiftColliders();
 };

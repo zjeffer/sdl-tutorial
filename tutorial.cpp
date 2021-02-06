@@ -128,17 +128,9 @@ int main(int argc, char* args[]) {
             SDL_Event e;
 
             // the dot that will be moving around the screen
-            Dot dot;
+            Dot dot(0,0);
 
-            // set the wall 
-            SDL_Rect wall;
-            wall.x = 300;
-            wall.y = 40;
-            wall.w = 40;
-            wall.h = 400;
-
-            // set text color
-            SDL_Color textColor = {0, 0, 0, 255};
+            Dot otherDot(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4);
 
             //While application is running (main loop)
             while (!quit) {
@@ -153,18 +145,15 @@ int main(int argc, char* args[]) {
                     dot.handleEvent(e);
                 }
 
-                dot.move(wall);
+                dot.move(otherDot.getColliders());
 
                 // clear screen
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
 
-                // render wall
-                SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xff);
-                SDL_RenderDrawRect(gRenderer, &wall);
-
-                // render object
+                // render objects
                 dot.render(gRenderer, &gDotTexture);
+                otherDot.render(gRenderer, &gDotTexture);
 
                 // update screen
                 SDL_RenderPresent(gRenderer);
