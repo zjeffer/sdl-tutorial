@@ -13,7 +13,7 @@ class Dot {
     static const int DOT_HEIGHT = 20;
 
     // maximum axis velocity of the dot
-    static const int DOT_VEL = 1;
+    static const int DOT_VEL = 2;
 
     // initialize the variables
     Dot(int x, int y);
@@ -21,11 +21,18 @@ class Dot {
     // takes key presses and adjusts the dot's velocity
     void handleEvent(SDL_Event& e);
 
-    // moves the dot
+    // moves the dot, with collision
     void move(SDL_Rect& square, Circle& circle);
 
+    // move the dot
+    void move();
+
     // shows the dot on the screen
-    void render(SDL_Renderer* renderer, LTexture* texture);
+    void render(SDL_Renderer* renderer, LTexture* texture, int camX, int camY);
+    
+    //Position accessors
+	int getPosX();
+	int getPosY();
 
     Circle& getColliders();
 

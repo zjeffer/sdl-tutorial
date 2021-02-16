@@ -52,7 +52,6 @@ bool checkCollision(Circle& a, SDL_Rect& b){
     return false;
 }
 
-
 void Dot::shiftColliders(){
     //Align collider to center of dot
 	mCollider.x = mPosX;
@@ -78,6 +77,16 @@ Dot::Dot(int x, int y) {
     // initialize colliders relative to position
     shiftColliders();
     
+}
+
+int Dot::getPosX()
+{
+	return mPosX;
+}
+
+int Dot::getPosY()
+{
+	return mPosY;
 }
 
 void Dot::handleEvent(SDL_Event& e) {
@@ -123,7 +132,7 @@ void Dot::move(SDL_Rect& square, Circle& circle) {
     shiftColliders();
 
     // if the dot went too far left/right
-    if ((mPosX - mCollider.r < 0) || (mPosX + mCollider.r > SCREEN_WIDTH) || checkCollision(mCollider, circle) || checkCollision(mCollider, square)) {
+    if ((mPosX - mCollider.r < 0) || (mPosX + mCollider.r > LEVEL_WIDTH) || checkCollision(mCollider, circle) || checkCollision(mCollider, square)) {
         // move back
         mPosX -= mVelX;
         shiftColliders();
@@ -134,14 +143,34 @@ void Dot::move(SDL_Rect& square, Circle& circle) {
     shiftColliders();
 
     // if the dot went too far up/down
-    if ((mPosY - mCollider.r < 0) || (mPosY + mCollider.r > SCREEN_WIDTH)  || checkCollision(mCollider, circle) || checkCollision(mCollider, square)) {
+    if ((mPosY - mCollider.r < 0) || (mPosY + mCollider.r > LEVEL_HEIGHT)  || checkCollision(mCollider, circle) || checkCollision(mCollider, square)) {
         // move back
         mPosY -= mVelY;
         shiftColliders();
     }
 }
 
-void Dot::render(SDL_Renderer* renderer, LTexture* texture) {
+void Dot::move(){
+    // move the dot left/right
+    mPosX += mVelX;
+
+    // if the dot went too far left/right
+    if ((mPosX < 0) || (mPosX + DOT_WIDTH> LEVEL_WIDTH)) {
+        // move back
+        mPosX -= mVelX;
+    }
+
+    // move the dot up/down
+    mPosY += mVelY;
+
+    // if the dot went too far up/down
+    if ((mPosY < 0) || (mPosY + DOT_WIDTH > LEVEL_HEIGHT)) {
+        // move back
+        mPosY -= mVelY;
+    }
+}
+
+void Dot::render(SDL_Renderer* renderer, LTexture* texture, int camX, int camY) {
     // show the dot
-    texture->render(renderer, mPosX - mCollider.r, mPosY - mCollider.r);
+    texture->render(renderer, mPosX - mCollider.r - camX, mPosY - mCollider.r - camY);
 }
