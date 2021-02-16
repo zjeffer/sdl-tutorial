@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "Constants.hpp"
+#include "Circle.hpp"
 #include "lTexture.hpp"
 
 // the dot that will move around on the screen
@@ -21,12 +22,12 @@ class Dot {
     void handleEvent(SDL_Event& e);
 
     // moves the dot
-    void move(std::vector<SDL_Rect>& otherColliders);
+    void move(SDL_Rect& square, Circle& circle);
 
     // shows the dot on the screen
     void render(SDL_Renderer* renderer, LTexture* texture);
 
-    std::vector<SDL_Rect>& getColliders();
+    Circle& getColliders();
 
    private:
     // the x and y offsets of the dot
@@ -35,9 +36,9 @@ class Dot {
     // the velocity of the dot
     int mVelX, mVelY;
 
-    // dot's collision detector
-    std::vector<SDL_Rect> mColliders;
+    // dot's collision circle
+    Circle mCollider;
 
-    // moves the collision boxes relateive to the dot's offset
+    // moves the collision circle relateive to the dot's offset
     void shiftColliders();
 };

@@ -1,58 +1,66 @@
 #include "Dot.hpp"
 
-bool checkCollision(std::vector<SDL_Rect>& a, std::vector<SDL_Rect>& b){
-    // the sides of the rectangles
-    int leftA, leftB;
-    int rightA, rightB;
-    int topA, topB;
-    int bottomA, bottomB;
+double distanceSquared(int x1, int y1, int x2, int y2){
+    int deltaX = x2 - x1;
+    int deltaY = y2 - y1;
+    return deltaX * deltaX + deltaY * deltaY;
+}
 
-    // go through the A boxes;
-    for(int Abox = 0; Abox < a.size(); Abox++){
-        // calculate the sizes of rect A
-        leftA = a[Abox].x;
-        rightA = a[Abox].x + a[Abox].w;
-        topA = a[Abox].y;
-        bottomA = a[Abox].y + a[Abox].h;
+bool checkCollision(Circle& a, Circle& b){
+    // calculate total radius squared
+    int totalRadiusSquared = a.r + b.r;
+    totalRadiusSquared = totalRadiusSquared * totalRadiusSquared;
 
-        // go through the B boxes
-        for(int Bbox = 0; Bbox < b.size(); Bbox++){
-            // calculate the sizes of rect B
-            leftB = b[Bbox].x;
-            rightB = b[Bbox].x + b[Bbox].w;
-            topB = b[Bbox].y;
-            bottomB = b[Bbox].y + b[Bbox].h;
-
-            // if no sides from A are outside of B
-            if (((bottomA <= topB || topA >= bottomB || rightA <= leftB || leftA >= rightB)) == false){
-                // a collision is detected
-                return true;
-            }
-        }
+    // if the distance between the centers of the circle is less than the sum of their radii
+    if(distanceSquared(a.x, a.y, b.x, b.y) < totalRadiusSquared){
+        // the circles have collided
+        return true;
     }
-    // if neither set of collision boxes touched
+
+    // if not
     return false;
 }
 
-void Dot::shiftColliders(){
-    // the row offset
-    int r = 0;
+bool checkCollision(Circle& a, SDL_Rect& b){
+    // closest point on collision box
+    int cX, cY;
 
-    // got through the dot's collision boxes;
-    for(int set = 0; set < mColliders.size(); ++set){
-        // center the collsion box
-        mColliders[set].x = mPosX + (DOT_WIDTH - mColliders[set].w) / 2;
-
-        // set the collision box at its row offset
-        mColliders[set].y = mPosY + r;
-
-        // move the row offset down the height of the collision box
-        r += mColliders[set].h;
+    // find closest x offset
+    if (a.x < b.x){
+        cX = b.x;
+    } else if (a.x > b.x + b.w){
+        cX = b.x + b.w;
+    } else {
+        cX = a.x;
     }
+
+    // find closest y offset
+    if (a.y < b.y){
+        cY = b.y;
+    } else if (a.y > b.y + b.h){
+        cY = b.y + b.h;
+    } else {
+        cY = a.y;
+    }
+
+    // if the closest point is inside the circle
+    if(distanceSquared(a.x, a.y, cX, cY) < a.r * a.r){
+        // this box and the circle have collided
+        return true;
+    }
+
+    return false;
 }
 
-std::vector<SDL_Rect>& Dot::getColliders(){
-    return mColliders;
+
+void Dot::shiftColliders(){
+    //Align collider to center of dot
+	mCollider.x = mPosX;
+	mCollider.y = mPosY;
+}
+
+Circle& Dot::getColliders(){
+    return mCollider;
 }
 
 Dot::Dot(int x, int y) {
@@ -65,41 +73,7 @@ Dot::Dot(int x, int y) {
     mVelY = 0;
 
     // create the necessary SDL_Rects
-    mColliders.resize(11);
-
-    // initialize the collision boxes' width and height
-    mColliders[0].w = 6;
-    mColliders[0].h = 1;
-
-    mColliders[1].w = 10;
-    mColliders[1].h = 1;
-
-    mColliders[2].w = 14;
-    mColliders[2].h = 1;
-    
-    mColliders[3].w = 16;
-    mColliders[3].h = 2;
-    
-    mColliders[4].w = 18;
-    mColliders[4].h = 2;
-    
-    mColliders[5].w = 20;
-    mColliders[5].h = 2;
-    
-    mColliders[6].w = 18;
-    mColliders[6].h = 2;
-    
-    mColliders[7].w = 16;
-    mColliders[7].h = 2;
-    
-    mColliders[8].w = 14;
-    mColliders[8].h = 1;
-    
-    mColliders[9].w = 10;
-    mColliders[9].h = 1;
-    
-    mColliders[10].w = 6;
-    mColliders[10].h = 1;
+    mCollider.r = DOT_WIDTH / 2;
     
     // initialize colliders relative to position
     shiftColliders();
@@ -143,13 +117,13 @@ void Dot::handleEvent(SDL_Event& e) {
     }
 }
 
-void Dot::move(std::vector<SDL_Rect>& otherColliders) {
+void Dot::move(SDL_Rect& square, Circle& circle) {
     // move the dot left/right
     mPosX += mVelX;
     shiftColliders();
 
     // if the dot went too far left/right
-    if ((mPosX < 0) || (mPosX + DOT_WIDTH > SCREEN_WIDTH) || checkCollision(mColliders, otherColliders)) {
+    if ((mPosX - mCollider.r < 0) || (mPosX + mCollider.r > SCREEN_WIDTH) || checkCollision(mCollider, circle) || checkCollision(mCollider, square)) {
         // move back
         mPosX -= mVelX;
         shiftColliders();
@@ -160,7 +134,7 @@ void Dot::move(std::vector<SDL_Rect>& otherColliders) {
     shiftColliders();
 
     // if the dot went too far up/down
-    if ((mPosY < 0) || (mPosY + DOT_HEIGHT > SCREEN_HEIGHT) || checkCollision(mColliders, otherColliders)) {
+    if ((mPosY - mCollider.r < 0) || (mPosY + mCollider.r > SCREEN_WIDTH)  || checkCollision(mCollider, circle) || checkCollision(mCollider, square)) {
         // move back
         mPosY -= mVelY;
         shiftColliders();
@@ -169,5 +143,5 @@ void Dot::move(std::vector<SDL_Rect>& otherColliders) {
 
 void Dot::render(SDL_Renderer* renderer, LTexture* texture) {
     // show the dot
-    texture->render(renderer, mPosX, mPosY);
+    texture->render(renderer, mPosX - mCollider.r, mPosY - mCollider.r);
 }

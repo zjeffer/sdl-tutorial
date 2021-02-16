@@ -11,6 +11,7 @@ and may not be redistributed without written permission.*/
 #include <string>
 
 #include "Constants.hpp"
+#include "Circle.hpp"
 #include "Dot.hpp"
 #include "lTexture.hpp"
 #include "lTimer.hpp"
@@ -128,9 +129,15 @@ int main(int argc, char* args[]) {
             SDL_Event e;
 
             // the dot that will be moving around the screen
-            Dot dot(0,0);
-
+            Dot dot(Dot::DOT_WIDTH / 2, Dot::DOT_HEIGHT / 2);
             Dot otherDot(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4);
+
+            // set the wall
+            SDL_Rect wall;
+            wall.x = 300;
+            wall.y = 40;
+            wall.w = 40;
+            wall.h = 400;
 
             //While application is running (main loop)
             while (!quit) {
@@ -145,11 +152,15 @@ int main(int argc, char* args[]) {
                     dot.handleEvent(e);
                 }
 
-                dot.move(otherDot.getColliders());
+                dot.move(wall, otherDot.getColliders());
 
                 // clear screen
                 SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
                 SDL_RenderClear(gRenderer);
+
+                // render wall
+                SDL_SetRenderDrawColor(gRenderer, 0x00, 0x00, 0x00, 0xff);
+                SDL_RenderDrawRect(gRenderer, &wall);
 
                 // render objects
                 dot.render(gRenderer, &gDotTexture);
