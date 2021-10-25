@@ -242,7 +242,6 @@ int main(int argc, char* args[]) {
                 gBGTexture.render(gRenderer, 0, 0);
 
                 // render text textures
-                // TODO
                 gPromptTextTexture.render(gRenderer, (SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
                 gInputTextTexture.render(gRenderer, (SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gPromptTextTexture.getHeight()) / 2);
 
