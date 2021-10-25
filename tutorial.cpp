@@ -139,6 +139,8 @@ int main(int argc, char* args[]) {
             // the dot that will be moving around the screen
             Dot dot(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
+            int scrollingOffset = 0;
+
             SDL_Rect camera = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 
             //While application is running (main loop)
@@ -156,29 +158,19 @@ int main(int argc, char* args[]) {
 
                 dot.move();
 
-                camera.x = (dot.getPosX() + Dot::DOT_WIDTH / 2) - SCREEN_WIDTH / 2;
-                camera.y = (dot.getPosY() + Dot::DOT_HEIGHT / 2) - SCREEN_HEIGHT / 2;
-
-                // keep the camera in bounds
-                if(camera.x < 0){
-                    camera.x = 0;
-                }
-                if(camera.y < 0){
-                    camera.y = 0;
-                }
-                if(camera.x > LEVEL_WIDTH - camera.w){
-                    camera.x = LEVEL_WIDTH - camera.w;
-                }
-                if(camera.y > LEVEL_HEIGHT - camera.h){
-                    camera.y = LEVEL_HEIGHT - camera.h;
+                // scroll background
+                --scrollingOffset;
+                if (scrollingOffset < -gBGTexture.getWidth()) {
+                    scrollingOffset = 0;
                 }
 
                 // clear screen
-                SDL_SetRenderDrawColor(gRenderer, 0xff, 0xff, 0xff, 0xff);
+                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
                 SDL_RenderClear(gRenderer);
 
                 // render background
-                gBGTexture.render(gRenderer, 0, 0, &camera);
+                gBGTexture.render(gRenderer, scrollingOffset, 0);
+                gBGTexture.render(gRenderer, scrollingOffset + gBGTexture.getWidth(), 0);
 
                 // render objects
                 dot.render(gRenderer, &gDotTexture, camera.x, camera.y);
