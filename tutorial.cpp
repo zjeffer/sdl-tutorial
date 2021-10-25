@@ -37,7 +37,17 @@ SDL_Renderer* gRenderer = NULL;
 // dot texture
 LTexture gDotTexture;
 
+// background texture
 LTexture gBGTexture;
+
+// input text texture
+LTexture gInputTextTexture;
+
+// prompt text texture
+LTexture gPromptTextTexture;
+
+// font
+TTF_Font* gFont = NULL;
 
 bool init() {
     //Initialization flag
@@ -101,6 +111,13 @@ bool loadMedia() {
         success = false;
     }
 
+    // font
+    gFont = TTF_OpenFont("fonts/OpenSans-Regular.ttf", 28);
+    if (!gFont) {
+        printf("Failed to load font!\n");
+        success = false;
+    }
+
     return success;
 }
 
@@ -108,6 +125,11 @@ void close() {
     //Free loaded images
     gDotTexture.free();
     gBGTexture.free();
+    gPromptTextTexture.free();
+    gInputTextTexture.free();
+
+    // disable text input
+    SDL_StopTextInput();
 
     //Destroy window
     SDL_DestroyRenderer(gRenderer);
@@ -139,29 +161,77 @@ int main(int argc, char* args[]) {
             // the dot that will be moving around the screen
             Dot dot(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
 
-            int scrollingOffset = 0;
+            // text color
+            SDL_Color textColor = {0, 0, 0};
+
+            // the current input text
+            std::string inputText = "Some Text";
+            gInputTextTexture.loadFromRenderedText(gRenderer, inputText.c_str(), gFont, textColor);
+
+            gPromptTextTexture.loadFromRenderedText(gRenderer, "Enter Text:", gFont, textColor);
+
+            // enable text input
+            SDL_StartTextInput();
 
             SDL_Rect camera = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
 
             //While application is running (main loop)
             while (!quit) {
+                // the rerender text flag
+                bool renderText = false;
+
                 //Handle events on queue
                 while (SDL_PollEvent(&e) != 0) {
                     //User requests quit
                     if (e.type == SDL_QUIT) {
                         quit = true;
                     }
-
+                    // special key input
+                    else if (e.type == SDL_KEYDOWN) {
+                        // handle backspace
+                        if (e.key.keysym.sym == SDLK_BACKSPACE && inputText.length() > 0) {
+                            if (SDL_GetModState() & KMOD_CTRL) {
+                                inputText = "";
+                            } else {
+                                inputText.pop_back();
+                            }
+                            renderText = true;
+                        }
+                        // handle copy
+                        else if (e.key.keysym.sym == SDLK_c && SDL_GetModState() & KMOD_CTRL) {
+                            SDL_SetClipboardText(inputText.c_str());
+                        }
+                        // handle paste
+                        else if (e.key.keysym.sym == SDLK_v && SDL_GetModState() & KMOD_CTRL) {
+                            inputText += SDL_GetClipboardText();
+                            renderText = true;
+                        }
+                    } else if (e.type == SDL_TEXTINPUT){
+                        // not copy or pasting
+                        if (!(SDL_GetModState() & KMOD_CTRL && (e.text.text[0] == 'c' || e.text.text[0] == 'C' || e.text.text[0] == 'v' || e.text.text[0] == 'V'))) {
+                            // append character
+                            inputText += e.text.text;
+                            renderText = true;
+                        }
+                    }
                     // handle input for the dot
                     dot.handleEvent(e);
                 }
 
                 dot.move();
 
-                // scroll background
-                --scrollingOffset;
-                if (scrollingOffset < -gBGTexture.getWidth()) {
-                    scrollingOffset = 0;
+                // rerender text if needed
+                if (renderText){
+                    // text is not empty
+                    if (inputText != ""){
+                        // render new text
+                        gInputTextTexture.loadFromRenderedText(gRenderer, inputText.c_str(), gFont, textColor);
+                    }
+                    // text is empty
+                    else {
+                        // render space texture
+                        gInputTextTexture.loadFromRenderedText(gRenderer, " ", gFont, textColor);
+                    }
                 }
 
                 // clear screen
@@ -169,8 +239,12 @@ int main(int argc, char* args[]) {
                 SDL_RenderClear(gRenderer);
 
                 // render background
-                gBGTexture.render(gRenderer, scrollingOffset, 0);
-                gBGTexture.render(gRenderer, scrollingOffset + gBGTexture.getWidth(), 0);
+                gBGTexture.render(gRenderer, 0, 0);
+
+                // render text textures
+                // TODO
+                gPromptTextTexture.render(gRenderer, (SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, 0);
+                gInputTextTexture.render(gRenderer, (SCREEN_WIDTH - gPromptTextTexture.getWidth()) / 2, (SCREEN_HEIGHT - gPromptTextTexture.getHeight()) / 2);
 
                 // render objects
                 dot.render(gRenderer, &gDotTexture, camera.x, camera.y);
