@@ -27,10 +27,7 @@ void close();
 SDL_Texture* loadTexture(std::string path);
 
 // our custom window
-LWindow gWindow;
-
-// the window renderer
-SDL_Renderer* gRenderer = NULL;
+LWindow gWindows[TOTAL_WINDOWS];
 
 // scene textures
 LTexture gSceneTexture;
@@ -51,29 +48,9 @@ bool init() {
         }
 
         // create custom window
-        // gWindow = LWindow();
-
-        if (!gWindow.init(SCREEN_WIDTH, SCREEN_HEIGHT)){
+        if (!gWindows[0].init(SCREEN_WIDTH, SCREEN_HEIGHT)){
             printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
             success = false;
-        } else {
-            // create renderer for windows
-            gRenderer = gWindow.createRenderer();
-
-            if (gRenderer == NULL) {
-                printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
-                success = false;
-            } else {
-                // initialize renderer color
-                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-                // initialize png loading
-                int imgFlags = IMG_INIT_PNG;
-                if (!(IMG_Init(imgFlags) & imgFlags)) {
-                    printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-                    success = false;
-                }
-            }
         }
     }
 
@@ -84,10 +61,6 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
-    if (!gSceneTexture.loadFromFile(gRenderer, "img/window.png")){
-        printf("Failed to load window texture!\n");
-        success = false;
-    }
 
     return success;
 }
@@ -95,12 +68,12 @@ bool loadMedia() {
 void close() {
     gSceneTexture.free();
 
-    //Destroy window
-    gWindow.free();
-    SDL_DestroyRenderer(gRenderer);
+    //Destroy windows
+    for (int i = 0; i < TOTAL_WINDOWS; i++) {
+        gWindows[i].free();
+    }
 
     //Quit SDL subsystems
-    IMG_Quit();
     SDL_Quit();
 }
 
@@ -116,6 +89,11 @@ int main(int argc, char* args[]) {
             //Main loop flag
             bool quit = false;
 
+            // initialize the rest of the windows
+            for (int i = 1; i < TOTAL_WINDOWS; i++) {
+                gWindows[i].init(SCREEN_WIDTH, SCREEN_HEIGHT);
+            }
+
             //Event handler
             SDL_Event e;
 
@@ -128,20 +106,45 @@ int main(int argc, char* args[]) {
                         quit = true;
                     }
 
-                    gWindow.handleEvent(e);
+                    // handle windows events
+                    for (int i = 0; i < TOTAL_WINDOWS; i++) {
+                        gWindows[i].handleEvent(e);
+                    }
+
+                    if (e.type == SDL_KEYDOWN) {
+                        switch(e.key.keysym.sym) {
+                            case SDLK_1:
+                                gWindows[0].focus();
+                                break;
+                            
+                            case SDLK_2:
+                                gWindows[1].focus();
+                                break;
+
+                            case SDLK_3:
+                                gWindows[2].focus();
+                                break;
+                        }
+                    }
                 }
 
-                // only draw when not minimized
-                if (!gWindow.isMinimized()){
-                    // clear screen
-                    SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-                    SDL_RenderClear(gRenderer);
+                // update all windows
+                for (int i = 0; i < TOTAL_WINDOWS; i++) {
+                    gWindows[i].render();
+                }
 
-                    // render text textures
-                    gSceneTexture.render(gRenderer, (gWindow.getWidth() - gSceneTexture.getWidth()) / 2, (gWindow.getHeight() - gSceneTexture.getHeight()) / 2);
+                // check all winddows
+                bool allWindowsClosed = true;
+                for (int i = 0; i < TOTAL_WINDOWS; i++) {
+                    if (gWindows[i].isShown()) {
+                        allWindowsClosed = false;
+                        break;
+                    }
+                }
 
-                    // update screen
-                    SDL_RenderPresent(gRenderer);
+                // application closed all windows
+                if (allWindowsClosed) {
+                    quit = true;
                 }
             }
         }

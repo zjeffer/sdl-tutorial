@@ -17,6 +17,12 @@ class LWindow {
 		// handles window events
 		void handleEvent(SDL_Event& e);
 
+		// focuses on window
+		void focus();
+
+		// shows window contents
+		void render();
+
 		// deallocates internals
 		void free();
 
@@ -28,6 +34,7 @@ class LWindow {
 		bool hasMouseFocus();
 		bool hasKeyboardFocus();
 		bool isMinimized();
+		bool isShown();
 	
 	private:
 		// the renderer
@@ -35,6 +42,8 @@ class LWindow {
 
 		// window data
 		SDL_Window* mWindow;
+
+		int mWindowID;
 
 		// window dimensions
 		int mWidth;
@@ -45,4 +54,5 @@ class LWindow {
 		bool mKeyboardFocus;
 		bool mFullscreen;
 		bool mMinimized;
+		bool mShown;
 };
