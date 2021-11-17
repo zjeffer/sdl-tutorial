@@ -129,19 +129,19 @@ int main(int argc, char* args[]) {
                     }
 
                     gWindow.handleEvent(e);
+                }
 
-                    // only draw when not minimized
-                    if (!gWindow.isMinimized()){
-                        // clear screen
-                        SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
-                        SDL_RenderClear(gRenderer);
+                // only draw when not minimized
+                if (!gWindow.isMinimized()){
+                    // clear screen
+                    SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                    SDL_RenderClear(gRenderer);
 
-                        // render text textures
-                        gSceneTexture.render(gRenderer, (gWindow.getWidth() - gSceneTexture.getWidth()) / 2, (gWindow.getHeight() - gSceneTexture.getHeight()) / 2);
+                    // render text textures
+                    gSceneTexture.render(gRenderer, (gWindow.getWidth() - gSceneTexture.getWidth()) / 2, (gWindow.getHeight() - gSceneTexture.getHeight()) / 2);
 
-                        // update screen
-                        SDL_RenderPresent(gRenderer);
-                    }
+                    // update screen
+                    SDL_RenderPresent(gRenderer);
                 }
             }
         }
