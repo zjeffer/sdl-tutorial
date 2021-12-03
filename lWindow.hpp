@@ -42,8 +42,8 @@ class LWindow {
 
 		// window data
 		SDL_Window* mWindow;
-
 		int mWindowID;
+		int mWindowDisplayID;
 
 		// window dimensions
 		int mWidth;

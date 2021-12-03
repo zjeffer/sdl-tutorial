@@ -27,7 +27,11 @@ void close();
 SDL_Texture* loadTexture(std::string path);
 
 // our custom window
-LWindow gWindows[TOTAL_WINDOWS];
+LWindow gWindow;
+
+// display data
+int gTotalDisplays = 0;
+SDL_Rect* gDisplayBound = NULL;
 
 // scene textures
 LTexture gSceneTexture;
@@ -48,7 +52,7 @@ bool init() {
         }
 
         // create custom window
-        if (!gWindows[0].init(SCREEN_WIDTH, SCREEN_HEIGHT)){
+        if (!gWindow.init(SCREEN_WIDTH, SCREEN_HEIGHT)){
             printf("Window could not be created! SDL Error: %s\n", SDL_GetError());
             success = false;
         }
@@ -68,10 +72,8 @@ bool loadMedia() {
 void close() {
     gSceneTexture.free();
 
-    //Destroy windows
-    for (int i = 0; i < TOTAL_WINDOWS; i++) {
-        gWindows[i].free();
-    }
+    //Destroy window
+    gWindow.free();
 
     //Quit SDL subsystems
     SDL_Quit();
@@ -89,11 +91,6 @@ int main(int argc, char* args[]) {
             //Main loop flag
             bool quit = false;
 
-            // initialize the rest of the windows
-            for (int i = 1; i < TOTAL_WINDOWS; i++) {
-                gWindows[i].init(SCREEN_WIDTH, SCREEN_HEIGHT);
-            }
-
             //Event handler
             SDL_Event e;
 
@@ -104,48 +101,13 @@ int main(int argc, char* args[]) {
                     //User requests quit
                     if (e.type == SDL_QUIT) {
                         quit = true;
-                    }
-
+                    } 
                     // handle windows events
-                    for (int i = 0; i < TOTAL_WINDOWS; i++) {
-                        gWindows[i].handleEvent(e);
-                    }
-
-                    if (e.type == SDL_KEYDOWN) {
-                        switch(e.key.keysym.sym) {
-                            case SDLK_1:
-                                gWindows[0].focus();
-                                break;
-                            
-                            case SDLK_2:
-                                gWindows[1].focus();
-                                break;
-
-                            case SDLK_3:
-                                gWindows[2].focus();
-                                break;
-                        }
-                    }
+                    gWindow.handleEvent(e);
                 }
 
-                // update all windows
-                for (int i = 0; i < TOTAL_WINDOWS; i++) {
-                    gWindows[i].render();
-                }
-
-                // check all winddows
-                bool allWindowsClosed = true;
-                for (int i = 0; i < TOTAL_WINDOWS; i++) {
-                    if (gWindows[i].isShown()) {
-                        allWindowsClosed = false;
-                        break;
-                    }
-                }
-
-                // application closed all windows
-                if (allWindowsClosed) {
-                    quit = true;
-                }
+                // update window
+                gWindow.render();
             }
         }
 

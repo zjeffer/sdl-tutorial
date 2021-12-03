@@ -28,13 +28,13 @@ bool LWindow::init(int width, int height){
             printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
             SDL_DestroyWindow(mWindow);
             mWindow = NULL;
-        }
-        else{
+        } else {
             // initialize renderer color
             SDL_SetRenderDrawColor(mRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
-            // grab window id
+            // grab window ids
             mWindowID = SDL_GetWindowID(mWindow);
+            mWindowDisplayID = SDL_GetWindowDisplayIndex(mWindow);
             
             // flag as opened
             mShown = true;
@@ -52,11 +52,16 @@ SDL_Renderer* LWindow::createRenderer(){
 
 
 void LWindow::handleEvent(SDL_Event& e){
+    // caption update flag
+    bool updateCaption = false;
     // window event occured
     if (e.type == SDL_WINDOWEVENT && e.window.windowID == mWindowID){
-        // caption update flag
-        bool updateCaption = false;
         switch (e.window.event){
+            // window moved
+            case SDL_WINDOWEVENT_MOVED:
+                mWindowDisplayID = SDL_GetWindowDisplayIndex(mWindow);
+                updateCaption = true;
+                break;
             // window appeared
             case SDL_WINDOWEVENT_SHOWN:
                 mShown = true;
@@ -123,22 +128,51 @@ void LWindow::handleEvent(SDL_Event& e){
                 SDL_HideWindow(mWindow);
                 break;
         }
-        // update caption with new data (if necessary)
-        if (updateCaption){
-            std::stringstream caption;
-            caption << "SDL Tutorial " << mWindowID << " - Mouse Focus: " << ((mMouseFocus) ? "On" : "Off") << " Keyboard Focus: " << ((mKeyboardFocus) ? "On" : "Off");
-            SDL_SetWindowTitle(mWindow, caption.str().c_str());
-            printf("Current window focus: %s\n", caption.str().c_str());
+    } else if (e.type == SDL_KEYDOWN){
+        // display change flag
+        bool switchDisplay = false;
+
+        // cycle through displays on up/down
+        switch(e.key.keysym.sym){
+            case SDLK_RETURN:
+                if (mFullscreen){
+                    SDL_SetWindowFullscreen(mWindow, SDL_FALSE);
+                    mFullscreen = false;
+                } else {
+                    SDL_SetWindowFullscreen(mWindow, SDL_TRUE);
+                    mFullscreen = true;
+                    mMinimized = false;
+                }
+                break;
+            case SDLK_UP:
+                ++mWindowDisplayID;
+                switchDisplay = true;
+                break;
+            case SDLK_DOWN:
+                --mWindowDisplayID;
+                switchDisplay = true;
+                break;
         }
-    } else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN){
-        if (mFullscreen){
-            SDL_SetWindowFullscreen(mWindow, SDL_FALSE);
-            mFullscreen = false;
-        } else {
-            SDL_SetWindowFullscreen(mWindow, SDL_TRUE);
-            mFullscreen = true;
-            mMinimized = false;
+
+        // display update
+        if (switchDisplay){
+            // bound display index
+            int numDisplays = SDL_GetNumVideoDisplays();
+            if (mWindowDisplayID < 0) mWindowDisplayID = numDisplays - 1;
+            else if (mWindowDisplayID >= numDisplays) mWindowDisplayID = 0;
+            // move window to center of next display
+            SDL_Rect bounds;
+            SDL_GetDisplayBounds(mWindowDisplayID, &bounds);
+            SDL_SetWindowPosition(mWindow, bounds.x + (bounds.w / 2) - (mWidth / 2), bounds.y + (bounds.h / 2) - (mHeight / 2));
+            updateCaption = true;
         }
+    }
+    // update caption with new data (if necessary)
+    if (updateCaption){
+        std::stringstream caption;
+        caption << "SDL Tutorial " << mWindowID << " Display: " << mWindowDisplayID << " - Mouse Focus: " << ((mMouseFocus) ? "On" : "Off") << " Keyboard Focus: " << ((mKeyboardFocus) ? "On" : "Off");
+        SDL_SetWindowTitle(mWindow, caption.str().c_str());
+        printf("Current window focus: %s\n", caption.str().c_str());
     }
 }
 
