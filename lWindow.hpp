@@ -35,6 +35,9 @@ class LWindow {
 		bool hasKeyboardFocus();
 		bool isMinimized();
 		bool isShown();
+
+		// get the renderer
+		SDL_Renderer* getRenderer();
 	
 	private:
 		// the renderer

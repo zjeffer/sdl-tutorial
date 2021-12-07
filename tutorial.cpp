@@ -13,6 +13,7 @@ and may not be redistributed without written permission.*/
 #include "Constants.hpp"
 #include "lTexture.hpp"
 #include "lWindow.hpp"
+#include "lDot.hpp"
 
 //Starts up SDL and creates window
 bool init();
@@ -29,12 +30,19 @@ SDL_Texture* loadTexture(std::string path);
 // our custom window
 LWindow gWindow;
 
-// display data
-int gTotalDisplays = 0;
-SDL_Rect* gDisplayBound = NULL;
+// dot texture
+LTexture gDotTexture;
 
-// scene textures
-LTexture gSceneTexture;
+// renderer
+SDL_Renderer* gRenderer = NULL;
+
+// particle textures
+LTexture* gParticleTextures[TOTAL_PARTICLES] = {
+    new LTexture(),
+    new LTexture(),
+    new LTexture(),
+    new LTexture()
+};
 
 
 bool init() {
@@ -65,13 +73,48 @@ bool loadMedia() {
     //Loading success flag
     bool success = true;
 
+    // load dot texture
+    if (!gDotTexture.loadFromFile(gWindow.getRenderer(), "img/dot.bmp")) {
+        printf("Failed to load dot texture!\n");
+        success = false;
+    }
+    if (!gParticleTextures[0]->loadFromFile(gWindow.getRenderer(), "img/red.bmp")) {
+        printf("Failed to load red texture!\n");
+        success = false;
+    }
+    if (!gParticleTextures[1]->loadFromFile(gWindow.getRenderer(), "img/green.bmp")) {
+        printf("Failed to load green texture!\n");
+        success = false;
+    }
+    if (!gParticleTextures[2]->loadFromFile(gWindow.getRenderer(), "img/blue.bmp")) {
+        printf("Failed to load blue texture!\n");
+        success = false;
+    }
+    if (!gParticleTextures[3]->loadFromFile(gWindow.getRenderer(), "img/shimmer.bmp")) {
+        printf("Failed to load shimmer texture!\n");
+        success = false;
+    }
+    
+    // set texture transparency
+    for (int i = 0; i < TOTAL_PARTICLES; i++) {
+        gParticleTextures[i]->setAlpha(192);
+    }
 
     return success;
 }
 
 void close() {
-    gSceneTexture.free();
+    //Free loaded images
+    gDotTexture.free();
+    for (int i = 0; i < TOTAL_PARTICLES; i++) {
+        gParticleTextures[i]->free();
+    }
 
+    // destroy renderer
+    SDL_Renderer* renderer = gWindow.getRenderer();
+    if (renderer != NULL) {
+        SDL_DestroyRenderer(renderer);
+    }
     //Destroy window
     gWindow.free();
 
@@ -94,6 +137,11 @@ int main(int argc, char* args[]) {
             //Event handler
             SDL_Event e;
 
+            // create new dot
+            Dot dot = Dot(&gDotTexture, gParticleTextures);
+
+            gRenderer = gWindow.getRenderer();
+
             //While application is running (main loop)
             while (!quit) {
                 //Handle events on queue
@@ -103,11 +151,22 @@ int main(int argc, char* args[]) {
                         quit = true;
                     } 
                     // handle windows events
-                    gWindow.handleEvent(e);
+                    //gWindow.handleEvent(e);
+
+                    // dot events
+                    dot.handleEvent(e);
                 }
 
-                // update window
-                gWindow.render();
+                // move dot
+                dot.move();
+
+                SDL_SetRenderDrawColor(gRenderer, 0xFF, 0xFF, 0xFF, 0xFF);
+                SDL_RenderClear(gRenderer);
+
+                dot.render(gRenderer);
+
+                // update screen
+                SDL_RenderPresent(gRenderer);
             }
         }
 

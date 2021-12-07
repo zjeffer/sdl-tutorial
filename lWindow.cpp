@@ -23,7 +23,7 @@ bool LWindow::init(int width, int height){
         mHeight = height;
 
         // create renderer for window
-        mRenderer = SDL_CreateRenderer(mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        mRenderer = createRenderer();
         if (mRenderer == NULL){
             printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
             SDL_DestroyWindow(mWindow);
@@ -229,4 +229,8 @@ bool LWindow::isMinimized(){
 
 bool LWindow::isShown(){
     return mShown;
+}
+
+SDL_Renderer* LWindow::getRenderer(){
+    return mRenderer;
 }

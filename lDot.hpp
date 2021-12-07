@@ -1,9 +1,12 @@
+#pragma once
+
 #include <SDL2/SDL.h>
 #include <vector>
 
 #include "Constants.hpp"
 #include "Circle.hpp"
 #include "lTexture.hpp"
+#include "lParticle.hpp"
 
 // the dot that will move around on the screen
 class Dot {
@@ -13,28 +16,26 @@ class Dot {
     static const int DOT_HEIGHT = 20;
 
     // maximum axis velocity of the dot
-    static const int DOT_VEL = 2;
+    static const int DOT_VEL = 5;
 
     // initialize the variables
-    Dot(int x, int y);
+    Dot(LTexture* dotTexture, LTexture* particleTextures[TOTAL_PARTICLES]);
+
+    // deallocate particles
+    ~Dot();
 
     // takes key presses and adjusts the dot's velocity
     void handleEvent(SDL_Event& e);
-
-    // moves the dot, with collision
-    void move(SDL_Rect& square, Circle& circle);
 
     // move the dot
     void move();
 
     // shows the dot on the screen
-    void render(SDL_Renderer* renderer, LTexture* texture, int camX, int camY);
+    void render(SDL_Renderer* renderer);
     
     //Position accessors
 	int getPosX();
 	int getPosY();
-
-    Circle& getColliders();
 
    private:
     // the x and y offsets of the dot
@@ -43,9 +44,13 @@ class Dot {
     // the velocity of the dot
     int mVelX, mVelY;
 
-    // dot's collision circle
-    Circle mCollider;
+    // the particles
+    Particle* particles[TOTAL_PARTICLES];
 
-    // moves the collision circle relateive to the dot's offset
-    void shiftColliders();
+    // show the particles
+    void renderParticles(SDL_Renderer* renderer);
+
+    LTexture* mDotTexture;
+    LTexture* mParticleTextures[TOTAL_PARTICLES];
+
 };
