@@ -7,44 +7,44 @@
 
 class LTexture {
    public:
-    // initializes variables
-    LTexture();
+	// initializes variables
+	LTexture();
 
-    // deallocates memory
-    ~LTexture();
+	// deallocates memory
+	~LTexture();
 
-    // loads image at specified path
-    bool loadFromFile(SDL_Renderer* renderer, std::string path);
+	// loads image at specified path
+	bool loadFromFile(SDL_Renderer* renderer, std::string path);
 
 #ifdef SDL_TTF_MAJOR_VERSION
-    // creates image from font string
-    bool loadFromRenderedText(SDL_Renderer* renderer, std::string textureText, TTF_Font* font, SDL_Color textColor);
+	// creates image from font string
+	bool loadFromRenderedText(SDL_Renderer* renderer, std::string textureText, TTF_Font* font, SDL_Color textColor);
 #endif
 
-    // deallocates texture
-    void free();
+	// deallocates texture
+	void free();
 
-    // set color modulation
-    void setColor(Uint8 red, Uint8 green, Uint8 blue);
+	// set color modulation
+	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 
-    // set blending
-    void setBlendMode(SDL_BlendMode blending);
+	// set blending
+	void setBlendMode(SDL_BlendMode blending);
 
-    // set alpha modulation
-    void setAlpha(Uint8 alpha);
+	// set alpha modulation
+	void setAlpha(Uint8 alpha);
 
-    // renders texture at given point
-    void render(SDL_Renderer* renderer, int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
+	// renders texture at given point
+	void render(SDL_Renderer* renderer, int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
 
-    // gets image dimensions
-    int getWidth();
-    int getHeight();
+	// gets image dimensions
+	int getWidth();
+	int getHeight();
 
    private:
-    // the actual hardware texture
-    SDL_Texture* mTexture;
+	// the actual hardware texture
+	SDL_Texture* mTexture;
 
-    // image dimensions
-    int mWidth;
-    int mHeight;
+	// image dimensions
+	int mWidth;
+	int mHeight;
 };

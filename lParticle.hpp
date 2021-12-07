@@ -5,27 +5,26 @@
 // particle count
 const int TOTAL_PARTICLES = 4;
 
-
 class Particle {
-    public:
-        Particle(int x, int y, LTexture* textures[TOTAL_PARTICLES]);
+   public:
+	Particle(int x, int y, LTexture* textures[TOTAL_PARTICLES]);
 
-        ~Particle();
+	~Particle();
 
-        // show the particle
-        void render(SDL_Renderer* renderer);
+	// show the particle
+	void render(SDL_Renderer* renderer);
 
-        // check if the particle is dead
-        bool isDead();
+	// check if the particle is dead
+	bool isDead();
 
-    private:
-        // offsets
-        int mPosX, mPosY;
+   private:
+	// offsets
+	int mPosX, mPosY;
 
-        // current animation frame
-        int mFrame;
+	// current animation frame
+	int mFrame;
 
-        // type of particle
-        LTexture* mTexture;
-        LTexture* mShimmerTexture;
+	// type of particle
+	LTexture* mTexture;
+	LTexture* mShimmerTexture;
 };

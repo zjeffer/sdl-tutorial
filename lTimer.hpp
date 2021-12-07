@@ -2,30 +2,30 @@
 
 class LTimer {
    public:
-    // initializes variables
-    LTimer();
+	// initializes variables
+	LTimer();
 
-    // the various clock actions
-    void start();
-    void stop();
-    void pause();
-    void unpause();
+	// the various clock actions
+	void start();
+	void stop();
+	void pause();
+	void unpause();
 
-    // gets the timer's time
-    Uint32 getTicks();
+	// gets the timer's time
+	Uint32 getTicks();
 
-    // checks the status of the timer
-    bool isStarted();
-    bool isPaused();
+	// checks the status of the timer
+	bool isStarted();
+	bool isPaused();
 
    private:
-    // the clock time when the timer started
-    Uint32 mStartTicks;
+	// the clock time when the timer started
+	Uint32 mStartTicks;
 
-    // the ticks stored when the timer was paused
-    Uint32 mPausedTicks;
+	// the ticks stored when the timer was paused
+	Uint32 mPausedTicks;
 
-    // the timer status
-    bool mPaused;
-    bool mStarted;
+	// the timer status
+	bool mPaused;
+	bool mStarted;
 };
